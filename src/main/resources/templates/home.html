@@ -11,54 +11,106 @@
     
     <style>
         body {
-            background-image: url('https://img.freepik.com/free-vector/beautiful-watercolor-background_23-2148486848.jpg?semt=ais_hybrid&w=740&q=80');
-            background-size: cover;
-            background-position: center;
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1f9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
         }
+        
+        /* 進場動畫 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .custom-card {
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
             transition: all 0.3s ease;
             border-radius: 20px !important;
-            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out;
         }
+
         .custom-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-5px);
             box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
         }
-        .btn-login {
-            background: linear-gradient(45deg, #0d6efd, #0043a8);
+
+        .btn-login-custom {
+            background: linear-gradient(45deg, #9E76B4, #7d5b92);
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
+            color: white;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
         }
-        .btn-signup {
-            border-radius: 10px;
-            border: 2px solid #6c757d;
+
+        .btn-login-custom:hover {
+            background: linear-gradient(45deg, #7d5b92, #6a4a7e);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(158, 118, 180, 0.4);
+            color: white;
+        }
+
+        .btn-outline-custom {
+            color: #9E76B4 !important;
+            border: 2px solid #9E76B4 !important;
+            border-radius: 12px;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-custom:hover {
+            background: rgba(158, 118, 180, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .admin-link {
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        .admin-link:hover {
+            color: #9E76B4;
         }
     </style>
 </head>
-<body class="bg-light p-5">
+<body class="p-3">
 
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-5">
             
             <div class="card custom-card shadow-sm border-0">
-                <div class="card-body p-5 text-center">
+                <div class="card-body p-4 p-md-5 text-center">
                     <div class="mb-4">
-                        <i class="bi bi-person-badge-fill text-primary" style="font-size: 4rem;"></i>
+                        <i class="bi bi- bag-heart-fill" style="font-size: 4.5rem; color: #9E76B4;"></i>
                     </div>
-                    <h3 class="fw-bold mb-2">いらっしゃいませ</h3>
-                    <p class="text-muted mb-4">注文する前にログインまたはアカウント作成してください。</p>
+                    <h2 class="fw-bold mb-3" style="color: #495057;">いらっしゃいませ</h2>
+                    <p class="text-muted mb-5">美味しい体験を。はじめるにはログインしてください。</p>
                     
                     <div class="d-grid gap-3">
-                        <button class="btn btn-primary btn-login py-3 fw-bold" onclick="location.href='login'">
+                        <button class="btn btn-login-custom py-3 fw-bold" onclick="location.href='login'">
                             <i class="bi bi-box-arrow-in-right me-2"></i>ログイン
                         </button>
-                        <button class="btn btn-outline-secondary btn-signup py-3 fw-bold" onclick="location.href='signup'">
+                        <button class="btn btn-outline-custom py-3 fw-bold" onclick="location.href='signup'">
                             <i class="bi bi-person-plus me-2"></i>アカウント作成
                         </button>
-                        <button class="btn btn-outline-secondary btn-signup py-3 fw-bold" onclick="location.href='admin/adminlogin'">
-                            <i class="bi bi-shield-lock me-2"></i>管理者ログイン
-                        </button>
+                    </div>
+
+                    <div class="mt-5">
+                        <a href="admin/adminlogin" class="admin-link">
+                            <i class="bi bi-shield-lock me-1"></i>管理者の方はこちら
+                        </a>
                     </div>
                 </div>
             </div>

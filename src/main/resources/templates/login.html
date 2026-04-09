@@ -1,67 +1,97 @@
 <!DOCTYPE html>
-
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>ログイン</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - Demo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1f9 100%);
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 300px;
-            text-align: center;
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+        .custom-card {
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border-radius: 20px !important;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
         }
-        .btn-register {
-            width: 100%;
-            padding: 10px;
-            background-color: #42b72a; 
-            color: white;
+        .form-control:focus {
+            border-color: #9E76B4;
+            box-shadow: 0 0 0 0.25 remote rgba(158, 118, 180, 0.25);
+        }
+        .btn-login-custom {
+            background: linear-gradient(45deg, #9E76B4, #7d5b92);
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 12px;
+            color: white;
+            transition: all 0.3s ease;
             font-weight: bold;
         }
-        .btn-back {
-            margin-top: 15px;
-            background: none;
-            border: none;
-            color: #0866ff;
-            cursor: pointer;
-            text-decoration: underline;
+        .btn-login-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(158, 118, 180, 0.4);
+            color: white;
         }
+        .link-custom {
+            color: #9E76B4;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .link-custom:hover { text-decoration: underline; }
     </style>
 </head>
-
+<body>
 <div class="container">
-    <h2>ログイン</h2>
-    <form action="/login_2" method="post">
-        <p th:if="${error}" th:text="${error}" style="color: red;"></p>
-        <input type="email" name="email" placeholder="メールアドレス" required autocomplete="off" />
-        <input type="password" name="password" placeholder="パスワード" required autocomplete="off" />
-        <button type="submit" class="btn-register">ログイン</button>
-    </form>
-    <form action="/signup" method="get">
-        <button type="button"class="btn-back" onclick="location.href='signup'">新規登録はこちら</button>
-    <button type="button"class="btn-back" onclick="location.href='forgotPassword'">パスワードを忘れた</button>
-</div>
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card custom-card shadow-sm border-0">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-circle" style="font-size: 3rem; color: #9E76B4;"></i>
+                        <h3 class="fw-bold mt-2">ログイン</h3>
+                    </div>
+                    
+                    <div th:if="${error}" class="alert alert-danger p-2 small text-center" role="alert">
+                        <span th:text="${error}"></span>
+                    </div>
 
+                    <form action="/login_2" method="post">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">メールアドレス</label>
+                            <input type="email" name="email" class="form-control" placeholder="example@mail.com" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small">パスワード</label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-login-custom py-2">ログイン</button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <p class="small text-muted mb-1">アカウントをお持ちでないですか？</p>
+                        <a href="/signup" class="link-custom fw-bold">新規登録はこちら</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
 </html>
