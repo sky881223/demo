@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-register {
+            width: 100%;
+            padding: 10px;
+            background-color: #42b72a; 
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-back {
+            margin-top: 15px;
+            background: none;
+            border: none;
+            color: #0866ff;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<div class="container">
+    <h2>ログイン</h2>
+    <form action="/login_2" method="post">
+        <p th:if="${error}" th:text="${error}" style="color: red;"></p>
+        <input type="email" name="email" placeholder="メールアドレス" required autocomplete="off" />
+        <input type="password" name="password" placeholder="パスワード" required autocomplete="off" />
+        <button type="submit" class="btn-register">ログイン</button>
+    </form>
+    <form action="/signup" method="get">
+        <button type="button"class="btn-back" onclick="location.href='signup'">新規登録はこちら</button>
+    <button type="button"class="btn-back" onclick="location.href='forgotPassword'">パスワードを忘れた</button>
+</div>
+
+</html>

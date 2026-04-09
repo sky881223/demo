@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理者プロフィール</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body { 
+            background-color: #f4f6f9; 
+            font-family: 'Noto Sans JP', sans-serif; 
+        }
+        
+        /* 整個卡片的圓角與陰影 */
+        .profile-card { 
+            border: none; 
+            border-radius: 20px; 
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+        }
+        
+        /* 管理員專屬的頂部漸層色塊 (沿用你的紫色主題) */
+        .admin-header { 
+            background: linear-gradient(135deg, #9E76B4, #7d5b92); 
+            color: white; 
+            padding: 40px 20px 30px; 
+            text-align: center; 
+        }
+        
+        /* 頂部大圖示的圓框 */
+        .admin-avatar { 
+            width: 80px; 
+            height: 80px; 
+            background-color: rgba(255,255,255,0.2); 
+            border-radius: 50%; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 2.5rem; 
+            margin-bottom: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* 自訂長條形按鈕選單 */
+        .menu-btn { 
+            text-align: left; 
+            border-radius: 12px; 
+            padding: 16px 20px; 
+            margin-bottom: 15px; 
+            border: 1px solid #e9ecef; 
+            background-color: white; 
+            color: #495057; 
+            font-weight: bold; 
+            transition: all 0.3s ease; 
+            display: flex; 
+            align-items: center; 
+        }
+        
+        /* 按鈕滑鼠移過去的特效 */
+        .menu-btn:hover { 
+            background-color: #fdfcff; 
+            border-color: #9E76B4; 
+            color: #9E76B4; 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(158, 118, 180, 0.15); 
+        }
+        
+        /* 按鈕左側的主要圖示 */
+        .menu-btn i.main-icon { 
+            font-size: 1.4rem; 
+            margin-right: 15px; 
+            width: 30px; 
+            text-align: center; 
+            color: #9E76B4; 
+        }
+        
+        /* 按鈕右側的小箭頭 */
+        .menu-btn i.arrow-icon {
+            margin-left: auto;
+            color: #adb5bd;
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .menu-btn:hover i.arrow-icon {
+            transform: translateX(3px);
+            color: #9E76B4;
+        }
+        
+        /* 登出按鈕專屬樣式 (紅色系) */
+        .logout-btn { 
+            border-color: #ffe0e3; 
+            background-color: #fff5f6;
+            color: #dc3545; 
+            margin-bottom: 0;
+        }
+        .logout-btn i.main-icon { color: #dc3545; }
+        .logout-btn i.arrow-icon { display: none; } /* 登出不需要箭頭 */
+        
+        .logout-btn:hover { 
+            background-color: #dc3545; 
+            color: white; 
+            border-color: #dc3545; 
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.2);
+        }
+        .logout-btn:hover i.main-icon { color: white; }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card profile-card">
+                    
+                    <div class="admin-header">
+                        <div class="admin-avatar">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+                        <h3 class="fw-bold mb-1">管理者プロフィール</h3>
+                        <p class="mb-0" style="opacity: 0.8; font-size: 0.9rem;">システム管理パネル</p>
+                    </div>
+                    
+                    <div class="card-body p-4 p-md-5 bg-white">
+                        
+                        <button class="menu-btn w-100" onclick="location.href='/menu'">
+                            <i class="bi bi-shop main-icon"></i> 
+                            <span>ユーザーメニューを見る</span>
+                            <i class="bi bi-chevron-right arrow-icon"></i>
+                        </button>
+                        
+                        <button class="menu-btn w-100" onclick="location.href='/admin/menu'">
+                            <i class="bi bi-journal-plus main-icon"></i> 
+                            <span>管理メニュー（編集）</span>
+                            <i class="bi bi-chevron-right arrow-icon"></i>
+                        </button>
+                        
+                        <button class="menu-btn w-100" onclick="location.href='/admin/history'">
+                            <i class="bi bi-calendar2-check main-icon"></i> 
+                            <span>注文管理・ダッシュボード</span>
+                            <i class="bi bi-chevron-right arrow-icon"></i>
+                        </button>
+                        
+                        <hr class="my-4" style="border-color: #e9ecef;">
+                        
+                        <button class="menu-btn logout-btn w-100" onclick="location.href='/admin/adminlogout'">
+                            <i class="bi bi-box-arrow-right main-icon"></i> 
+                            <span class="fw-bold">ログアウト</span>
+                        </button>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

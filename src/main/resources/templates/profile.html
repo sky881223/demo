@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>マイプロフィール</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body { 
+            background-color: #f4f6f9; 
+            font-family: 'Noto Sans JP', sans-serif; 
+        }
+        
+        .profile-card { 
+            border: none; 
+            border-radius: 20px; 
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+        }
+        
+        /* 使用者專屬的頂部漸層 (與管理員維持同一個紫色系) */
+        .user-header { 
+            background: linear-gradient(135deg, #9E76B4, #7d5b92); 
+            color: white; 
+            padding: 40px 20px 30px; 
+            text-align: center; 
+        }
+        
+        .user-avatar { 
+            width: 80px; 
+            height: 80px; 
+            background-color: rgba(255,255,255,0.2); 
+            border-radius: 50%; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 2.5rem; 
+            margin-bottom: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 個人資料列表樣式 */
+        .info-list {
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-icon {
+            font-size: 1.2rem;
+            color: #9E76B4;
+            width: 35px;
+        }
+        .info-content {
+            flex-grow: 1;
+        }
+        .info-label { 
+            color: #6c757d; 
+            font-size: 0.8rem; 
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        .info-value { 
+            color: #212529; 
+            font-weight: 500; 
+            margin: 0;
+        }
+        
+        /* 自訂長條形按鈕選單 */
+        .menu-btn { 
+            text-align: left; 
+            border-radius: 12px; 
+            padding: 14px 20px; 
+            margin-bottom: 12px; 
+            border: 1px solid #e9ecef; 
+            background-color: white; 
+            color: #495057; 
+            font-weight: bold; 
+            transition: all 0.3s ease; 
+            display: flex; 
+            align-items: center; 
+            width: 100%;
+        }
+        
+        .menu-btn:hover { 
+            background-color: #fdfcff; 
+            border-color: #9E76B4; 
+            color: #9E76B4; 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(158, 118, 180, 0.15); 
+        }
+        
+        .menu-btn i.main-icon { 
+            font-size: 1.3rem; 
+            margin-right: 15px; 
+            width: 25px; 
+            text-align: center; 
+            color: #9E76B4; 
+        }
+        
+        .menu-btn i.arrow-icon {
+            margin-left: auto;
+            color: #adb5bd;
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .menu-btn:hover i.arrow-icon {
+            transform: translateX(3px);
+            color: #9E76B4;
+        }
+        
+        /* 登出按鈕專屬樣式 */
+        .logout-btn { 
+            border-color: #ffe0e3; 
+            background-color: #fff5f6;
+            color: #dc3545; 
+        }
+        .logout-btn i.main-icon { color: #dc3545; }
+        .logout-btn i.arrow-icon { display: none; }
+        .logout-btn:hover { 
+            background-color: #dc3545; 
+            color: white; 
+            border-color: #dc3545; 
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.2);
+        }
+        .logout-btn:hover i.main-icon { color: white; }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card profile-card">
+                    
+                    <div class="user-header">
+                        <div class="user-avatar">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <h3 class="fw-bold mb-1" th:text="${currentUser.username}">ユーザー名</h3>
+                        <p class="mb-0" style="opacity: 0.9; font-size: 0.95rem;">マイプロフィール</p>
+                    </div>
+                    
+                    <div class="card-body p-4 p-md-5 bg-white">
+                        
+                        <div class="info-list shadow-sm">
+                            <div class="info-item">
+                                <div class="info-icon"><i class="bi bi-fingerprint"></i></div>
+                                <div class="info-content">
+                                    <p class="info-label">アカウント ID</p>
+                                    <p class="info-value" th:text="${currentUser.id}">1</p>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon"><i class="bi bi-envelope"></i></div>
+                                <div class="info-content">
+                                    <p class="info-label">メールアドレス</p>
+                                    <p class="info-value" th:text="${currentUser.email}">example@mail.com</p>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon"><i class="bi bi-shield-lock"></i></div>
+                                <div class="info-content">
+                                    <p class="info-label">パスワード</p>
+                                    <p class="info-value" th:text="${currentUser.password}">******</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-muted mb-3 mt-4">メニュー</h6>
+
+                        <button class="menu-btn" onclick="location.href='/menu'">
+                            <i class="bi bi-shop main-icon"></i> 
+                            <span>注文する (メニュー)</span>
+                            <i class="bi bi-chevron-right arrow-icon"></i>
+                        </button>
+
+                        <form th:action="@{/history_2}" method="post" class="m-0 p-0">
+                            <button type="submit" class="menu-btn">
+                                <i class="bi bi-calendar2-check main-icon"></i> 
+                                <span>注文履歴を見る</span>
+                                <i class="bi bi-chevron-right arrow-icon"></i>
+                            </button>
+                        </form>
+
+                        <button class="menu-btn" onclick="location.href='/resetName'">
+                            <i class="bi bi-person-vcard main-icon"></i> 
+                            <span>名前を変更</span>
+                            <i class="bi bi-chevron-right arrow-icon"></i>
+                        </button>
+                        
+                        <button class="menu-btn" onclick="location.href='/forgotPassword'">
+                            <i class="bi bi-key main-icon"></i> 
+                            <span>パスワードをリセット</span>
+                            <i class="bi bi-chevron-right arrow-icon"></i>
+                        </button>
+                        
+                        <hr class="my-4" style="border-color: #e9ecef;">
+                        
+                        <button class="menu-btn logout-btn" onclick="location.href='/logout'">
+                            <i class="bi bi-box-arrow-right main-icon"></i> 
+                            <span class="fw-bold">ログアウト</span>
+                        </button>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
