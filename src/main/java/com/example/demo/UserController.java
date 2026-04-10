@@ -154,7 +154,7 @@ public class UserController {
         @RequestParam("quantities") List<Integer> allQuantities, 
         HttpSession session , Model model) {
         User user = (User) session.getAttribute("user"); 
-        System.out.print("進入/add-to-cart");
+        System.out.println("進入 /add-to-cart");
         if (user == null) {
             return "redirect:/login"; 
         }else{
@@ -177,16 +177,32 @@ public class UserController {
             order.setOrderTime(LocalDateTime.now().toString());
             int totalAmount = 0;
 
+            // 先取得所有菜單，用來對照正確的索引位置
+            List<Menu> allMenus = menuRepository.findAll();
+
             for (Long selectedId : menuIds) {
-                Menu menu = menuRepository.findById(selectedId).orElseThrow();
-                int qty = allQuantities.get(selectedId.intValue() - 1);
-                OrderDetail detail = new OrderDetail();
-                detail.setOrder(order);
-                detail.setMenu(menu);
-                detail.setQuantity(qty);
-                detail.setPrice(menu.getPrice());
-                totalAmount += (menu.getPrice() * qty);
-                order.getOrderDetails().add(detail);
+                Menu menu = menuRepository.findById(selectedId).orElse(null);
+                if (menu != null) {
+                    // 找出這個菜單在所有顯示菜單中的正確索引值
+                    int index = -1;
+                    for (int i = 0; i < allMenus.size(); i++) {
+                        if (allMenus.get(i).getId().equals(selectedId)) {
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    if (index != -1 && index < allQuantities.size()) {
+                        int qty = allQuantities.get(index);
+                        OrderDetail detail = new OrderDetail();
+                        detail.setOrder(order);
+                        detail.setMenu(menu);
+                        detail.setQuantity(qty);
+                        detail.setPrice(menu.getPrice());
+                        totalAmount += (menu.getPrice() * qty);
+                        order.getOrderDetails().add(detail);
+                    }
+                }
             }
             order.setTotal(totalAmount);
             orderRepository.save(order);
@@ -212,7 +228,7 @@ public class UserController {
         User user = (User) session.getAttribute("user"); 
         if (user == null) {
             return "redirect:/login"; 
-        }else{  
+        }else{ 
             List<Order> orders = orderRepository.findByUser(user);
             System.out.print("歷史訂單有多少筆:" + orders.size() + "\n");
             if (orders.size() <= 0) {

@@ -35,7 +35,7 @@ public class AdminController {
     public String manageMenu(Model model, HttpSession session) {
         Admin admin = (Admin) session.getAttribute("adminUser"); 
         if (admin == null) {
-            return "redirect:/admin/adminlogin_2"; 
+            return "redirect:/admin/adminlogin"; 
         }
         List<Menu> allMenus = menuRepository.findAll();
         model.addAttribute("menus", allMenus);
@@ -47,7 +47,7 @@ public class AdminController {
     public String addMenu(@ModelAttribute Menu menu, @RequestParam(value = "imageFile", required = false) MultipartFile imageFile, HttpSession session) {
         Admin admin = (Admin) session.getAttribute("adminUser");
         if (admin == null) {
-            return "redirect:/admin/adminlogin_2";
+            return "redirect:/admin/adminlogin";
         }
 
         if (imageFile != null && !imageFile.isEmpty()) {
