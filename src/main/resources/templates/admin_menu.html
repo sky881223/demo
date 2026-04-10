@@ -100,6 +100,15 @@
                         <label class="form-label fw-bold text-secondary small">名前</label>
                         <input type="text" class="form-control" th:field="*{name}" required>
                     </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold text-secondary small">カテゴリ</label>
+                        <select class="form-select" th:field="*{category}" required>
+                            <option value="主食">主食</option>
+                            <option value="飲み物">飲み物</option>
+                            <option value="デザート">デザート</option>
+                        </select>
+                    </div>
                     
                     <div class="col-md-2">
                         <label class="form-label fw-bold text-secondary small">価額 (円)</label>
@@ -141,6 +150,7 @@
                             <th>ID</th>
                             <th>画像</th>
                             <th>名前</th>
+                            <th>カテゴリ</th>
                             <th>価額</th>
                             <th>提供日</th>
                             <th>說明</th>
@@ -157,6 +167,7 @@
                                 <span th:if="${m.photo == null}" class="text-muted small">画像なし</span>
                             </td>
                             <td class="fw-bold" th:text="${m.name}"></td>
+                            <td><span class="badge bg-secondary" th:text="${m.category}"></span></td>
                             <td class="text-danger fw-bold" th:text="${m.price} + ' 円'"></td>
                             <td th:text="${m.provideDate}"></td>
                             <td class="text-start text-muted small" th:text="${m.description}"></td>

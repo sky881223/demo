@@ -16,10 +16,11 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-
     private int total;
     private String paymentStatus;
     private String orderTime;
+    private String note;
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> orderDetails = new ArrayList<>();
 }
+

@@ -79,6 +79,7 @@
                             <th>合計金額</th>
                             <th>支払い状況</th>
                             <th>注文日時</th>
+                            <th>備考</th>
                             <th>キャンセル</th>
                             <th>支払い</th>
                         </tr>
@@ -98,15 +99,15 @@
                                 <span th:text="${#numbers.formatDecimal(order.total, 1, 'COMMA', 0, 'POINT')}">0</span>円
                             </td>
                             <td>
-                                <div th:each="detail : ${order.orderDetails}">
-                                    <span
-                                        th:class="${order.paymentStatus == 'true' ? 'badge bg-success' : 'badge bg-secondary'}"
-                                        th:text="${order.paymentStatus == 'true' ? '支払済' : '未払い'}">未払い</span>
-                                </div>
+                                <span
+                                    th:class="${order.paymentStatus == 'true' ? 'badge bg-success' : 'badge bg-secondary'}"
+                                    th:text="${order.paymentStatus == 'true' ? '支払済' : '未払い'}">未払い</span>
                             </td>
                             <td class="small"
                                 th:text="${order.orderTime != null and order.orderTime.length() >= 16 ? #strings.replace(#strings.substring(order.orderTime, 0, 16), 'T', ' ') : '時間不明'}">
                             </td>
+                            <td class="small text-muted" th:text="${order.note ?: '-'}">-</td>
+
                             <td>
                                 <form th:action="@{/cancel-order}" method="post" style="display:inline;">
                                     <input type="hidden" name="orderId" th:value="${order.id}" />

@@ -15,5 +15,7 @@ public class User {
     private String username;
     private String email;
     private String password;
+    private int points; // 新增點數欄位
+    private String photo;
 
 }

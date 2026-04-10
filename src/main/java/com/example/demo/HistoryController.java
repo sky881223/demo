@@ -15,7 +15,6 @@ public class HistoryController {
         List<Order> orders = orderRepository.findByUser(user);
 
         model.addAttribute("orders", orders);
-        
         model.addAttribute("user", user);
         return "history";
     }

@@ -3,6 +3,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.time.LocalDateTime;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
@@ -13,6 +14,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -25,16 +33,17 @@ public class UserController {
     @Autowired
     private MenuRepository menuRepository;
     
+    // 統一密碼強度驗證：至少8位，含大小寫字母與數字
+    private boolean isValidPassword(String password) {
+        return password != null && password.length() >= 8 
+            && password.matches(".*[A-Z].*") 
+            && password.matches(".*[a-z].*") 
+            && password.matches(".*[0-9].*");
+    }
     
     @PostMapping("/saveUser")
     public String handleForm(@RequestParam("email") String email,@RequestParam("name") String name,@RequestParam("password") String password, Model model, HttpSession session) {
-        System.out.println("--- 進入/saveUser ---");
-        System.out.println("--- 萬能抓取測試 ---");
-        System.out.println("抓到的 Name: " + name);
-        System.out.println("抓到的 Email: " + email);
-        System.out.println("抓到的 Password: " + password);
-
-        if (password.length()>=8 && password.matches(".*[A-Z].*") && password.matches(".*[a-z].*") && password.matches(".*[0-9].*")) {
+        if (isValidPassword(password)) {
             String code = sendVerificationCode(email);
             session.setAttribute("email", email);
             session.setAttribute("code", code);
@@ -69,6 +78,49 @@ public class UserController {
         }
         return code; 
     }
+
+    /**
+     * Sends an order confirmation email to the user after successful payment.
+     * @param user The user who placed the order.
+     * @param order The confirmed and paid order.
+     */
+    public void sendOrderConfirmationEmail(User user, Order order) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("107407002@stud.sju.edu.tw"); // 請確保這裡的發件人郵箱與你的郵件服務配置一致
+        message.setTo(user.getEmail());
+        message.setSubject("ご注文と支払いが完了しました - 注文ID: " + order.getId());
+
+        StringBuilder emailBody = new StringBuilder();
+        emailBody.append(user.getUsername()).append("様、\n\n");
+        emailBody.append("ご注文と支払いが正常に完了しました。\n");
+        emailBody.append("ご注文の詳細は以下の通りです。\n\n");
+        emailBody.append("注文ID: ").append(order.getId()).append("\n");
+        emailBody.append("注文日時: ").append(order.getOrderTime()).append("\n\n");
+        emailBody.append("--- ご注文内容 ---\n");
+        for (OrderDetail detail : order.getOrderDetails()) {
+            emailBody.append(detail.getMenu().getName())
+                     .append(" x ")
+                     .append(detail.getQuantity())
+                     .append(" = ")
+                     .append(detail.getPrice() * detail.getQuantity())
+                     .append("円\n");
+        }
+        emailBody.append("------------------\n");
+        emailBody.append("合計金額: ").append(order.getTotal()).append("円\n");
+        if (order.getNote() != null && !order.getNote().trim().isEmpty()) {
+            emailBody.append("備考: ").append(order.getNote()).append("\n");
+        }
+        emailBody.append("\nご利用ありがとうございます。\nまたのご利用をお待ちしております。\n");
+        message.setText(emailBody.toString());
+
+        try {
+            mailSender.send(message);
+            System.out.println("注文確認メールを " + user.getEmail() + " に送信しました。");
+        } catch (Exception e) {
+            System.err.println("注文確認メールの送信に失敗しました。エラー: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     
     @PostMapping("/verifyCode")
     public String verifyCode(@RequestParam("verifyCode") String verifyCode, HttpSession session , Model model) {
@@ -80,6 +132,7 @@ public class UserController {
                 user.setEmail((String) session.getAttribute("email"));
                 user.setUsername((String) session.getAttribute("name"));
                 user.setPassword((String) session.getAttribute("password"));
+                user.setPoints(0); // 新用戶點數初始化為0
                 session.removeAttribute("code");
                 userRepository.save(user);
             }
@@ -119,7 +172,7 @@ public class UserController {
         session.setAttribute("email", email);
         session.setAttribute("code", code);
         session.setAttribute("password", newPassword);
-        if (newPassword.length()>=8 && newPassword.matches(".*[A-Z].*") && newPassword.matches(".*[a-z].*") && newPassword.matches(".*[0-9].*")) {
+        if (isValidPassword(newPassword)) {
             session.setAttribute("newpassword", newPassword);
             return "pincode";
             }
@@ -151,7 +204,8 @@ public class UserController {
     @PostMapping("/add-to-cart")
     public String addToCart(
         @RequestParam(value = "menuIds", required = false) List<Long> menuIds, 
-        @RequestParam("quantities") List<Integer> allQuantities, 
+        @RequestParam(value = "note", required = false) String note,
+        HttpServletRequest request,
         HttpSession session , Model model) {
         User user = (User) session.getAttribute("user"); 
         System.out.println("進入 /add-to-cart");
@@ -174,53 +228,61 @@ public class UserController {
             Order order = new Order();
             order.setUser(user);
             order.setPaymentStatus("false");
+            order.setNote(note);
             order.setOrderTime(LocalDateTime.now().toString());
             int totalAmount = 0;
-
-            // 先取得所有菜單，用來對照正確的索引位置
-            List<Menu> allMenus = menuRepository.findAll();
 
             for (Long selectedId : menuIds) {
                 Menu menu = menuRepository.findById(selectedId).orElse(null);
                 if (menu != null) {
-                    // 找出這個菜單在所有顯示菜單中的正確索引值
-                    int index = -1;
-                    for (int i = 0; i < allMenus.size(); i++) {
-                        if (allMenus.get(i).getId().equals(selectedId)) {
-                            index = i;
-                            break;
-                        }
-                    }
-
-                    if (index != -1 && index < allQuantities.size()) {
-                        int qty = allQuantities.get(index);
-                        OrderDetail detail = new OrderDetail();
-                        detail.setOrder(order);
-                        detail.setMenu(menu);
-                        detail.setQuantity(qty);
-                        detail.setPrice(menu.getPrice());
-                        totalAmount += (menu.getPrice() * qty);
-                        order.getOrderDetails().add(detail);
-                    }
+                    // 從 request 中精確獲取該 ID 對應的數量
+                    String qtyRaw = request.getParameter("quantity_" + selectedId);
+                    int qty = (qtyRaw != null && !qtyRaw.isEmpty()) ? Integer.parseInt(qtyRaw) : 1;
+                    
+                    OrderDetail detail = new OrderDetail();
+                    detail.setOrder(order);
+                    detail.setMenu(menu);
+                    detail.setQuantity(qty);
+                    detail.setPrice(menu.getPrice());
+                    totalAmount += (menu.getPrice() * qty);
+                    order.getOrderDetails().add(detail);
                 }
             }
             order.setTotal(totalAmount);
             orderRepository.save(order);
             model.addAttribute("order", order);
+            // 將 orderId 存入 session 或 model 以便付款確認時使用，避免誤扣
+            session.setAttribute("pendingOrderId", order.getId());
             return "paymentStatus";
         }
     }
     @PostMapping("/paymentstatus_2")
-    public String paymentStatus(HttpSession session , Model model) {
+    public String paymentStatus(@RequestParam(value = "orderId", required = false) Long orderId, HttpSession session , Model model) {
         User user = (User) session.getAttribute("user"); 
         if (user == null) {
             return "redirect:/login"; 
         }else{
-            Order latestOrder = orderRepository.findTopByUserOrderByIdDesc(user);
-            model.addAttribute("lastOrder", latestOrder);
-            latestOrder.setPaymentStatus("true");
-            orderRepository.save(latestOrder);
+            // 優先使用傳入的 ID，若無則從 session 拿，最後才抓最新的（增加安全性）
+            Long idToPay = (orderId != null) ? orderId : (Long) session.getAttribute("pendingOrderId");
+            Order order = (idToPay != null) ? orderRepository.findById(idToPay).orElse(null) : orderRepository.findTopByUserOrderByIdDesc(user);
+            
+            if (order != null && "false".equals(order.getPaymentStatus())) {
+                order.setPaymentStatus("true");
+                orderRepository.save(order);
+                sendOrderConfirmationEmail(user, order); // 發送訂單確認郵件
+                addLoyaltyPoints(user, order); // 新增：發放點數
+                session.removeAttribute("pendingOrderId"); // 清除待處理訂單ID
+                model.addAttribute("lastOrder", order);
+            }
             return "redirect:/menu";  
+        }
+    }
+    public void addLoyaltyPoints(User user, Order order) {
+        if (order.getTotal() > 0) {
+            int pointsEarned = (int) Math.floor(order.getTotal() * 0.01); // 消費金額的1%點數，向下取整
+            user.setPoints(user.getPoints() + pointsEarned);
+            userRepository.save(user); // 更新用戶點數
+            System.out.println("用戶 " + user.getUsername() + " 獲得了 " + pointsEarned + " 點。總點數: " + user.getPoints());
         }
     }  
     @PostMapping("/history_2")
@@ -288,8 +350,42 @@ public class UserController {
         if (user == null) {
             return "redirect:/login"; 
         }
-        model.addAttribute("currentUser", user); 
+        // 從資料庫重新取得最新的使用者資料，確保顯示的點數是最即時的
+        User latestUser = userRepository.findById(user.getId()).orElse(user);
+        model.addAttribute("currentUser", latestUser); 
         return "profile";
+    }
+
+    @PostMapping("/profile/uploadPhoto")
+    public String uploadPhoto(@RequestParam("imageFile") MultipartFile imageFile, HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+                String uploadDir = "uploads/";
+                Path uploadPath = Paths.get(uploadDir);
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Path filePath = uploadPath.resolve(fileName);
+                Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                
+                // 確保從資料庫取得最新的 User 物件進行更新
+                User dbUser = userRepository.findById(user.getId()).orElse(user);
+                dbUser.setPhoto("/uploads/" + fileName);
+                userRepository.save(dbUser);
+                
+                // 更新 Session 中的使用者資訊
+                session.setAttribute("user", dbUser);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return "redirect:/profile";
     }
     
     @GetMapping("/signup")
