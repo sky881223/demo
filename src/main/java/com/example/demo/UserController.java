@@ -434,7 +434,46 @@ public class UserController {
         }
         // 從資料庫重新取得最新的使用者資料，確保顯示的點數是最即時的
         User latestUser = userRepository.findById(user.getId()).orElse(user);
+        
+        // 1. 獲取所有訂單以計算統計數據
+        List<Order> allOrders = orderRepository.findByUser(latestUser);
+        
+        // 2. 獲取最近 3 筆訂單，增加頁面內容豐富度
+        List<Order> recentOrders = allOrders.stream()
+                .sorted((o1, o2) -> o2.getId().compareTo(o1.getId()))
+                .limit(3)
+                .toList();
+
+        // 3. 計算會員等級與升級進度
+        int points = latestUser.getPoints();
+        String tier = "ブロンズ会員"; // 青銅
+        double progress = (points / 100.0) * 100;
+        int pointsToNext = 100 - points;
+
+        if (points >= 500) {
+            tier = "ゴールド会員"; // 黃金
+            progress = 100.0;
+            pointsToNext = 0;
+        } else if (points >= 100) {
+            tier = "シルバー会員"; // 白銀
+            progress = ((points - 100) / 400.0) * 100;
+            pointsToNext = 500 - points;
+        }
+
+        // 4. 計算累積消費總額 (僅計算已支付訂單)
+        int totalSpent = allOrders.stream()
+                .filter(o -> "true".equals(o.getPaymentStatus()))
+                .mapToInt(Order::getTotal)
+                .sum();
+
         model.addAttribute("currentUser", latestUser);
+        model.addAttribute("recentOrders", recentOrders);
+        model.addAttribute("tier", tier);
+        model.addAttribute("progress", progress);
+        model.addAttribute("pointsToNext", pointsToNext);
+        model.addAttribute("totalSpent", totalSpent);
+        model.addAttribute("orderCount", allOrders.size());
+
         return "profile";
     }
 
@@ -515,6 +554,11 @@ public class UserController {
     @GetMapping("/history")
     public String historyPage(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        List<Order> orders = orderRepository.findByUser(user);
+        model.addAttribute("orders", orders);
         model.addAttribute("currentUser", user);
         return "history";
     }
