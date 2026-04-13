@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポイント履歴 - Demo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1f9 100%);
+            min-height: 100vh;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        .history-card {
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(10px);
+            border-radius: 20px !important;
+            border: none !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+        }
+        .points-summary {
+            background-color: #9E76B4;
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .point-gain {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .point-spend {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .order-id-tag {
+            font-size: 0.8rem;
+            color: #6c757d;
+            background: #eee;
+            padding: 2px 8px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container py-5">
+    <div class="card history-card p-4 mx-auto" style="max-width: 800px;">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold"><i class="bi bi-stars text-warning me-2"></i>ポイント収支履歴</h3>
+        </div>
+
+        <!-- 點數總覽 -->
+        <div class="points-summary d-flex justify-content-between align-items-center">
+            <div>
+                <p class="mb-0 small opacity-75">現在の保有ポイント</p>
+                <h2 class="fw-bold mb-0" th:text="${currentUser.points + ' pt'}">0 pt</h2>
+            </div>
+            <i class="bi bi-wallet2 fs-1 opacity-50"></i>
+        </div>
+
+        <div class="table-container">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>日時</th>
+                        <th>内容</th>
+                        <th class="text-end">変動</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 這裡遍歷訂單，顯示點數變動 -->
+                    <tr th:each="order : ${orders}" th:if="${order.usedPoints > 0 or order.earnedPoints > 0}">
+                        <td>
+                            <span class="small text-muted" 
+                                  th:text="${order.orderTime != null and order.orderTime.length() >= 16 ? #strings.replace(#strings.substring(order.orderTime, 0, 16), 'T', ' ') : '時間不明'}">2023-10-01 12:00</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold small">注文によるポイント変動</div>
+                            <span class="order-id-tag">ID: <span th:text="${order.id}"></span></span>
+                        </td>
+                        <td class="text-end">
+                            <!-- 獲得點數 -->
+                            <div th:if="${order.earnedPoints > 0}" class="point-gain">
+                                + <span th:text="${order.earnedPoints}"></span> pt
+                            </div>
+                            <!-- 消耗點數 -->
+                            <div th:if="${order.usedPoints > 0}" class="point-spend">
+                                - <span th:text="${order.usedPoints}"></span> pt
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- 若無資料 -->
+                    <tr th:if="${orders.isEmpty()}">
+                        <td colspan="3" class="text-center py-4 text-muted">履歴がありません。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center mt-4 border-top pt-3">
+            <a href="/profile" class="text-decoration-none text-muted small">
+                <i class="bi bi-arrow-left me-1"></i> プロフィールに戻る
+            </a>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

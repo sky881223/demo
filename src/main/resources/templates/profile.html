@@ -215,12 +215,12 @@
                         </div>
 
                         <!-- ポイントカード表示区塊 -->
-                        <div class="p-3 mb-4 text-center shadow-sm" style="background-color: #fdfcff; border: 2px dashed #9E76B4; border-radius: 15px;">
+                        <div class="p-3 mb-4 text-center shadow-sm" style="background-color: #fdfcff; border: 2px dashed #9E76B4; border-radius: 15px; cursor: pointer;" onclick="location.href='/points-history'">
                             <h6 class="text-muted fw-bold mb-2 small"><i class="bi bi-star-fill me-1" style="color: #FFD700;"></i> 現在のポイント</h6>
                             <div style="color: #9E76B4; font-size: 2.2rem; font-weight: bold; line-height: 1;">
                                 <span th:text="${currentUser.points}">0</span> <span class="fs-6 text-muted">pt</span>
                             </div>
-                            <p class="text-muted small mt-2 mb-0" style="font-size: 0.7rem;">※ 消費金額の1%がポイントとして貯まります</p>
+                            <p class="text-muted small mt-2 mb-0" style="font-size: 0.7rem;">詳細を確認する <i class="bi bi-arrow-right-short"></i></p>
                         </div>
 
                         <h6 class="fw-bold text-muted mb-3 mt-4">メニュー</h6>
@@ -238,6 +238,12 @@
                                 <i class="bi bi-chevron-right arrow-icon"></i>
                             </button>
                         </form>
+
+                        <button class="menu-btn" onclick="location.href='/points-history'">
+                            <i class="bi bi-stars main-icon"></i> 
+                            <span>ポイント履歴を見る</span>
+                            <i class="bi bi-chevron-right arrow-icon"></i>
+                        </button>
 
                         <button class="menu-btn" onclick="location.href='/resetName'">
                             <i class="bi bi-person-vcard main-icon"></i> 

@@ -20,6 +20,7 @@ public class Order {
     private String paymentStatus;
     private String paymentMethod; // 新增：支付方式 (cash, credit_card)
     private int usedPoints;      // 新增：使用的抵扣點數
+    private int earnedPoints;    // 新增：該訂單獲得的點數
     private String orderTime;
     private String note;
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

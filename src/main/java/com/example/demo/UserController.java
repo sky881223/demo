@@ -346,11 +346,28 @@ public class UserController {
     public void addLoyaltyPoints(User user, Order order, HttpSession session) {
         if (order.getTotal() > 0) {
             int pointsEarned = (int) Math.floor(order.getTotal() * 0.01); // 消費金額的1%點數，向下取整
+            order.setEarnedPoints(pointsEarned); // 紀錄到訂單中，以便顯示明細
+            orderRepository.save(order);
             user.setPoints(user.getPoints() + pointsEarned);
             userRepository.save(user); // 更新用戶點數
             session.setAttribute("user", user); // 同步更新 Session，讓導覽列點數即時跳動
             System.out.println("用戶 " + user.getUsername() + " 獲得了 " + pointsEarned + " 點。總點數: " + user.getPoints());
         }
+    }
+
+    @GetMapping("/points-history")
+    public String pointsHistory(HttpSession session, Model model) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        // 獲取最新點數
+        User latestUser = userRepository.findById(user.getId()).orElse(user);
+        List<Order> orders = orderRepository.findByUser(latestUser);
+        
+        model.addAttribute("orders", orders);
+        model.addAttribute("currentUser", latestUser);
+        return "points_history";
     }
 
     @PostMapping("/history_2")

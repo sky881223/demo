@@ -142,7 +142,7 @@ public class AdminController {
         }
         System.out.println("正在取消訂單，訂單ID: " + orderId);
         return adminHistory(session,model);
-    } 
+    }
 
 
     @GetMapping("/admin_history")

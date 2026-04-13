@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>餐點評價 - Demo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #fdfcfb 0%, #e2d1f9 100%); min-height: 100vh; display: flex; align-items: center; font-family: 'Noto Sans JP', sans-serif; }
+        .review-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 500px; width: 100%; margin: auto; }
+        .rating-stars { font-size: 2rem; color: #ddd; cursor: pointer; display: flex; justify-content: center; gap: 10px; }
+        .rating-stars i.active { color: #FFD700; }
+        .btn-custom { background-color: #9E76B4; border: none; border-radius: 12px; color: white; padding: 12px; font-weight: bold; transition: 0.3s; }
+        .btn-custom:hover { background-color: #7d5b92; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+<div class="container py-5">
+    <div class="card review-card p-4 p-md-5">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold" style="color: #9E76B4;">餐點評價</h3>
+            <p class="text-muted" th:text="${menu.name}">餐點名稱</p>
+        </div>
+        <form th:action="@{/save-review}" method="POST">
+            <input type="hidden" name="menuId" th:value="${menu.id}">
+            <input type="hidden" name="rating" id="ratingValue" value="5">
+            
+            <div class="rating-stars mb-4" id="starContainer">
+                <i class="bi bi-star-fill active" data-value="1"></i>
+                <i class="bi bi-star-fill active" data-value="2"></i>
+                <i class="bi bi-star-fill active" data-value="3"></i>
+                <i class="bi bi-star-fill active" data-value="4"></i>
+                <i class="bi bi-star-fill active" data-value="5"></i>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold text-muted small">心得評論</label>
+                <textarea name="comment" class="form-control" rows="4" placeholder="分享一下您的用餐體驗吧..." style="border-radius: 12px;"></textarea>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-custom">評價を送信する</button>
+            </div>
+        </form>
+        <div class="text-center mt-4">
+            <a href="/history" class="text-muted small text-decoration-none"><i class="bi bi-arrow-left"></i> 戻る</a>
+        </div>
+    </div>
+</div>
+<script>
+    const stars = document.querySelectorAll('#starContainer i');
+    const ratingInput = document.getElementById('ratingValue');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const val = star.getAttribute('data-value');
+            ratingInput.value = val;
+            stars.forEach(s => {
+                s.classList.toggle('active', s.getAttribute('data-value') <= val);
+            });
+        });
+    });
+</script>
+</body>
+</html>
