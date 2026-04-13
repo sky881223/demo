@@ -1,4 +1,5 @@
 package com.example.demo;
+
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -32,17 +33,18 @@ public class UserController {
     private OrderRepository orderRepository;
     @Autowired
     private MenuRepository menuRepository;
-    
+
     // 統一密碼強度驗證：至少8位，含大小寫字母與數字
     private boolean isValidPassword(String password) {
-        return password != null && password.length() >= 8 
-            && password.matches(".*[A-Z].*") 
-            && password.matches(".*[a-z].*") 
-            && password.matches(".*[0-9].*");
+        return password != null && password.length() >= 8
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*[a-z].*")
+                && password.matches(".*[0-9].*");
     }
-    
+
     @PostMapping("/saveUser")
-    public String handleForm(@RequestParam("email") String email,@RequestParam("name") String name,@RequestParam("password") String password, Model model, HttpSession session) {
+    public String handleForm(@RequestParam("email") String email, @RequestParam("name") String name,
+            @RequestParam("password") String password, Model model, HttpSession session) {
         if (isValidPassword(password)) {
             String code = sendVerificationCode(email);
             session.setAttribute("email", email);
@@ -50,38 +52,40 @@ public class UserController {
             session.setAttribute("name", name);
             session.setAttribute("password", password);
             return "pincode";
-        }
-        else {
+        } else {
             model.addAttribute("error", "パスワードは8文字以上にしてください。");
             System.out.println("パスワードは8文字以上にしてください。");
-            return "signup"; 
+            return "signup";
         }
     }
+
     @Autowired
     private JavaMailSender mailSender;
+
     public String sendVerificationCode(String toEmail) {
 
-        String code = String.valueOf((int)((Math.random() * 900000) + 100000));
+        String code = String.valueOf((int) ((Math.random() * 900000) + 100000));
 
-   
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("107407002@stud.sju.edu.tw");
         message.setTo(toEmail);
         message.setSubject("コード認証");
-        message.setText("コード：" + code + "，５分鐘內有効。");
-    
+        message.setText("確認コードのお知らせ。\r\n以下の確認コードをサイトに入力してください。\r\nコード：" + code + "です。\r\nこのコードは５分鐘內有効。\r\n※このメールは送信専用メールアドレスから自動送信されています。\r\n" + //
+                        "　ご返信いただいてもお答えできませんのでご了承ください。");
+
         try {
-        mailSender.send(message); 
+            mailSender.send(message);
         } catch (Exception e) {
             System.out.println("發信失敗，錯誤原因：" + e.getMessage());
-            e.printStackTrace(); 
+            e.printStackTrace();    
         }
-        return code; 
+        return code;
     }
 
     /**
      * Sends an order confirmation email to the user after successful payment.
-     * @param user The user who placed the order.
+     * 
+     * @param user  The user who placed the order.
      * @param order The confirmed and paid order.
      */
     public void sendOrderConfirmationEmail(User user, Order order) {
@@ -99,11 +103,11 @@ public class UserController {
         emailBody.append("--- ご注文内容 ---\n");
         for (OrderDetail detail : order.getOrderDetails()) {
             emailBody.append(detail.getMenu().getName())
-                     .append(" x ")
-                     .append(detail.getQuantity())
-                     .append(" = ")
-                     .append(detail.getPrice() * detail.getQuantity())
-                     .append("円\n");
+                    .append(" x ")
+                    .append(detail.getQuantity())
+                    .append(" = ")
+                    .append(detail.getPrice() * detail.getQuantity())
+                    .append("円\n");
         }
         emailBody.append("------------------\n");
         emailBody.append("合計金額: ").append(order.getTotal()).append("円\n");
@@ -121,9 +125,9 @@ public class UserController {
             e.printStackTrace();
         }
     }
-    
+
     @PostMapping("/verifyCode")
-    public String verifyCode(@RequestParam("verifyCode") String verifyCode, HttpSession session , Model model) {
+    public String verifyCode(@RequestParam("verifyCode") String verifyCode, HttpSession session, Model model) {
         String correctCode = (String) session.getAttribute("code");
         if (verifyCode.equals(correctCode)) {
             System.out.println("驗證碼正確");
@@ -135,8 +139,7 @@ public class UserController {
                 user.setPoints(0); // 新用戶點數初始化為0
                 session.removeAttribute("code");
                 userRepository.save(user);
-            }
-            else if(session.getAttribute("newpassword") != null) {
+            } else if (session.getAttribute("newpassword") != null) {
                 User user = userRepository.findByEmail((String) session.getAttribute("email"));
                 user.setPassword((String) session.getAttribute("password"));
                 session.removeAttribute("code");
@@ -148,8 +151,10 @@ public class UserController {
             return "pincode";
         }
     }
+
     @PostMapping("/login_2")
-    public String login( @RequestParam("email") String email, @RequestParam("password") String password, Model model, HttpSession session) {
+    public String login(@RequestParam("email") String email, @RequestParam("password") String password, Model model,
+            HttpSession session) {
         System.out.println("正在登入");
         session.setAttribute("email", email);
         session.setAttribute("password", password);
@@ -166,24 +171,24 @@ public class UserController {
     }
 
     @PostMapping("/forgottenpassword_2")
-     public String forgottenpassword( @RequestParam("email") String email,@RequestParam("newpassword") String newPassword, Model model, HttpSession session) {
+    public String forgottenpassword(@RequestParam("email") String email,
+            @RequestParam("newpassword") String newPassword, Model model, HttpSession session) {
         System.out.println("正在重置密碼");
-        String code = sendVerificationCode(email);  
+        String code = sendVerificationCode(email);
         session.setAttribute("email", email);
         session.setAttribute("code", code);
         session.setAttribute("password", newPassword);
         if (isValidPassword(newPassword)) {
             session.setAttribute("newpassword", newPassword);
             return "pincode";
-            }
-        else {
+        } else {
             model.addAttribute("error", "パスワードは8文字以上にしてください。");
-            return "forgottenpassword"; 
+            return "forgottenpassword";
         }
     }
-        
+
     @PostMapping("/resetName_2")
-     public String resetName(@RequestParam("newname") String newName, Model model, HttpSession session) {
+    public String resetName(@RequestParam("newname") String newName, Model model, HttpSession session) {
         String email = (String) session.getAttribute("email");
         System.out.println("從 Session 拿到的 Email: " + email);
         String password = (String) session.getAttribute("password");
@@ -203,17 +208,17 @@ public class UserController {
 
     @PostMapping("/add-to-cart")
     public String addToCart(
-        @RequestParam(value = "menuIds", required = false) List<Long> menuIds, 
-        @RequestParam(value = "paymentMethod", defaultValue = "cash") String paymentMethod,
-        @RequestParam(value = "usedPoints", defaultValue = "0") int usedPoints,
-        @RequestParam(value = "note", required = false) String note,
-        HttpServletRequest request,
-        HttpSession session , Model model) {
-        User user = (User) session.getAttribute("user"); 
+            @RequestParam(value = "menuIds", required = false) List<Long> menuIds,
+            @RequestParam(value = "paymentMethod", defaultValue = "cash") String paymentMethod,
+            @RequestParam(value = "usedPoints", defaultValue = "0") int usedPoints,
+            @RequestParam(value = "note", required = false) String note,
+            HttpServletRequest request,
+            HttpSession session, Model model) {
+        User user = (User) session.getAttribute("user");
         System.out.println("進入 /add-to-cart");
         if (user == null) {
-            return "redirect:/login"; 
-        }else{
+            return "redirect:/login";
+        } else {
             LocalTime now = LocalTime.now(ZoneId.of("Asia/Tokyo"));
             LocalTime openTime = LocalTime.of(6, 0);
             LocalTime closeTime = LocalTime.of(23, 45);
@@ -230,13 +235,13 @@ public class UserController {
             order.setUser(user);
             order.setPaymentStatus("false");
             order.setPaymentMethod(paymentMethod);
-            
+
             // 點數抵扣初步驗證 (防止輸入超過持有數量)
             if (usedPoints > user.getPoints()) {
                 usedPoints = user.getPoints();
             }
             order.setUsedPoints(usedPoints);
-            
+
             order.setNote(note);
             order.setOrderTime(LocalDateTime.now().toString());
             int totalAmount = 0;
@@ -247,7 +252,7 @@ public class UserController {
                     // 從 request 中精確獲取該 ID 對應的數量
                     String qtyRaw = request.getParameter("quantity_" + selectedId);
                     int qty = (qtyRaw != null && !qtyRaw.isEmpty()) ? Integer.parseInt(qtyRaw) : 1;
-                    
+
                     OrderDetail detail = new OrderDetail();
                     detail.setOrder(order);
                     detail.setMenu(menu);
@@ -257,7 +262,7 @@ public class UserController {
                     order.getOrderDetails().add(detail);
                 }
             }
-            
+
             // 計算最終金額 (總額 - 點數抵扣)
             int finalAmount = totalAmount - usedPoints;
             if (finalAmount < 0) {
@@ -265,17 +270,17 @@ public class UserController {
                 finalAmount = 0;
             }
             order.setTotal(finalAmount);
-            
+
             orderRepository.save(order);
             model.addAttribute("order", order);
             // 將 orderId 存入 session 或 model 以便付款確認時使用，避免誤扣
             session.setAttribute("pendingOrderId", order.getId());
-            
+
             // 如果選擇信用卡，導向刷卡頁面
             if ("credit_card".equals(paymentMethod)) {
                 return "credit_card_payment";
             }
-            
+
             return "paymentStatus";
         }
     }
@@ -287,13 +292,15 @@ public class UserController {
             @RequestParam("cvv") String cvv,
             HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
-        if (user == null) return "redirect:/login";
+        if (user == null)
+            return "redirect:/login";
 
         // 這裡進行模擬刷卡邏輯
-        String lastFourDigits = (cardNumber != null && cardNumber.length() >= 4) ? 
-                                cardNumber.substring(cardNumber.length() - 4) : "****";
+        String lastFourDigits = (cardNumber != null && cardNumber.length() >= 4)
+                ? cardNumber.substring(cardNumber.length() - 4)
+                : "****";
         System.out.println("正在處理使用者 " + user.getUsername() + " 的信用卡支付，卡號後四碼: " + lastFourDigits);
-        
+
         // 取得待處理訂單並更新狀態
         Long idToPay = (Long) session.getAttribute("pendingOrderId");
         if (idToPay != null) {
@@ -303,14 +310,16 @@ public class UserController {
     }
 
     @PostMapping("/paymentstatus_2")
-    public String paymentStatus(@RequestParam(value = "orderId", required = false) Long orderId, HttpSession session , Model model) {
-        User user = (User) session.getAttribute("user"); 
+    public String paymentStatus(@RequestParam(value = "orderId", required = false) Long orderId, HttpSession session,
+            Model model) {
+        User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:/login"; 
-        }else{
+            return "redirect:/login";
+        } else {
             // 優先使用傳入的 ID，若無則從 session 拿，最後才抓最新的（增加安全性）
             Long idToPay = (orderId != null) ? orderId : (Long) session.getAttribute("pendingOrderId");
-            Order order = (idToPay != null) ? orderRepository.findById(idToPay).orElse(null) : orderRepository.findTopByUserOrderByIdDesc(user);
+            Order order = (idToPay != null) ? orderRepository.findById(idToPay).orElse(null)
+                    : orderRepository.findTopByUserOrderByIdDesc(user);
 
             if (order != null && "false".equals(order.getPaymentStatus())) {
                 // 1. 取得資料庫中最新的使用者物件，避免點數計算錯誤
@@ -323,9 +332,9 @@ public class UserController {
                 order.setPaymentStatus("true");
                 orderRepository.save(order);
                 sendOrderConfirmationEmail(user, order); // 發送訂單確認郵件
-                
+
                 // 4. 計算並增加新獲得的點數，最後存入資料庫與更新 Session
-                addLoyaltyPoints(dbUser, order, session); 
+                addLoyaltyPoints(dbUser, order, session);
                 session.removeAttribute("pendingOrderId"); // 清除待處理訂單ID
             }
             model.addAttribute("order", order); // 確保 order 物件傳回前端
@@ -333,6 +342,7 @@ public class UserController {
             return "paymentStatus"; // 改為返回頁面而非重定向，這樣才看得到「支払済」
         }
     }
+
     public void addLoyaltyPoints(User user, Order order, HttpSession session) {
         if (order.getTotal() > 0) {
             int pointsEarned = (int) Math.floor(order.getTotal() * 0.01); // 消費金額的1%點數，向下取整
@@ -341,13 +351,14 @@ public class UserController {
             session.setAttribute("user", user); // 同步更新 Session，讓導覽列點數即時跳動
             System.out.println("用戶 " + user.getUsername() + " 獲得了 " + pointsEarned + " 點。總點數: " + user.getPoints());
         }
-    }  
+    }
+
     @PostMapping("/history_2")
-    public String history(HttpSession session , Model model) {
-        User user = (User) session.getAttribute("user"); 
+    public String history(HttpSession session, Model model) {
+        User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:/login"; 
-        }else{ 
+            return "redirect:/login";
+        } else {
             List<Order> orders = orderRepository.findByUser(user);
             System.out.print("歷史訂單有多少筆:" + orders.size() + "\n");
             if (orders.size() <= 0) {
@@ -365,14 +376,15 @@ public class UserController {
             System.out.print("歷史訂單第一筆訂單時間:" + orders.get(0).getOrderTime() + "\n");
             model.addAttribute("orders", orders);
             model.addAttribute("currentUser", user);
-            return "history"; 
+            return "history";
         }
     }
+
     @PostMapping("/cancel-order")
     public String cancelOrder(@RequestParam("orderId") Long orderId, HttpSession session, Model model) {
-        User user = (User) session.getAttribute("user"); 
+        User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:/login"; 
+            return "redirect:/login";
         }
         Order order = orderRepository.findById(orderId).orElse(null);
         if (order != null && order.getUser().getId().equals(user.getId())) {
@@ -380,13 +392,13 @@ public class UserController {
         }
         return history(session, model);
     }
+
     @PostMapping("/pay")
-    public String pay(@RequestParam("id") Long id, HttpSession session , Model model) {
-        User user = (User) session.getAttribute("user"); 
+    public String pay(@RequestParam("id") Long id, HttpSession session, Model model) {
+        User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:/login"; 
-        }else{
-            Order order = orderRepository.findById(id).orElse(null);
+            return "redirect:/login";
+        } else {
             // 呼叫統一的支付處理邏輯，確保點數也會被扣除
             return paymentStatus(id, session, model);
         }
@@ -399,13 +411,13 @@ public class UserController {
 
     @GetMapping("/profile")
     public String showProfile(HttpSession session, Model model) {
-        User user = (User) session.getAttribute("user"); 
+        User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:/login"; 
+            return "redirect:/login";
         }
         // 從資料庫重新取得最新的使用者資料，確保顯示的點數是最即時的
         User latestUser = userRepository.findById(user.getId()).orElse(user);
-        model.addAttribute("currentUser", latestUser); 
+        model.addAttribute("currentUser", latestUser);
         return "profile";
     }
 
@@ -426,12 +438,12 @@ public class UserController {
                 }
                 Path filePath = uploadPath.resolve(fileName);
                 Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                
+
                 // 確保從資料庫取得最新的 User 物件進行更新
                 User dbUser = userRepository.findById(user.getId()).orElse(user);
                 dbUser.setPhoto("/uploads/" + fileName);
                 userRepository.save(dbUser);
-                
+
                 // 更新 Session 中的使用者資訊
                 session.setAttribute("user", dbUser);
             } catch (IOException e) {
@@ -448,21 +460,25 @@ public class UserController {
 
     @GetMapping("/login")
     public String loginPage() {
-        return "login"; 
+        return "login";
     }
+
     @GetMapping("/resetName")
-        public String resetNamePage() {
-            return "resetName"; 
+    public String resetNamePage() {
+        return "resetName";
     }
+
     @GetMapping("/logout")
     public String logout(HttpSession session) {
-        session.invalidate(); 
-        return "redirect:/login"; 
+        session.invalidate();
+        return "redirect:/login";
     }
+
     @GetMapping("/forgotPassword")
     public String forgotPasswordPage() {
-        return "forgottenpassword"; 
+        return "forgottenpassword";
     }
+
     @GetMapping("/menu")
     public String menuPage(Model model) {
         List<Menu> menus = menuRepository.findAll();
@@ -471,17 +487,18 @@ public class UserController {
         model.addAttribute("isOpen", isOpen);
         return "menu";
     }
+
     @GetMapping("/paymentStatus")
     public String paymentStatusPage(HttpSession session, Model model) {
-        User user = (User) session.getAttribute("user"); 
-        model.addAttribute("currentUser", user); 
+        User user = (User) session.getAttribute("user");
+        model.addAttribute("currentUser", user);
         return "paymentStatus";
     }
 
     @GetMapping("/history")
     public String historyPage(HttpSession session, Model model) {
-        User user = (User) session.getAttribute("user"); 
-        model.addAttribute("currentUser", user); 
+        User user = (User) session.getAttribute("user");
+        model.addAttribute("currentUser", user);
         return "history";
     }
 }
