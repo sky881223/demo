@@ -204,6 +204,8 @@ public class UserController {
     @PostMapping("/add-to-cart")
     public String addToCart(
         @RequestParam(value = "menuIds", required = false) List<Long> menuIds, 
+        @RequestParam(value = "paymentMethod", defaultValue = "cash") String paymentMethod,
+        @RequestParam(value = "usedPoints", defaultValue = "0") int usedPoints,
         @RequestParam(value = "note", required = false) String note,
         HttpServletRequest request,
         HttpSession session , Model model) {
@@ -220,7 +222,6 @@ public class UserController {
                 isOpen = false;
                 model.addAttribute("isOpen", isOpen);
                 return "menu";
-                
             }
             if (menuIds == null || menuIds.isEmpty()) {
                 return "redirect:/menu?error=none_selected";
@@ -228,6 +229,14 @@ public class UserController {
             Order order = new Order();
             order.setUser(user);
             order.setPaymentStatus("false");
+            order.setPaymentMethod(paymentMethod);
+            
+            // 點數抵扣初步驗證 (防止輸入超過持有數量)
+            if (usedPoints > user.getPoints()) {
+                usedPoints = user.getPoints();
+            }
+            order.setUsedPoints(usedPoints);
+            
             order.setNote(note);
             order.setOrderTime(LocalDateTime.now().toString());
             int totalAmount = 0;
@@ -248,14 +257,51 @@ public class UserController {
                     order.getOrderDetails().add(detail);
                 }
             }
-            order.setTotal(totalAmount);
+            
+            // 計算最終金額 (總額 - 點數抵扣)
+            int finalAmount = totalAmount - usedPoints;
+            if (finalAmount < 0) {
+                order.setUsedPoints(totalAmount); // 若點數多於總額，只抵扣到0元
+                finalAmount = 0;
+            }
+            order.setTotal(finalAmount);
+            
             orderRepository.save(order);
             model.addAttribute("order", order);
             // 將 orderId 存入 session 或 model 以便付款確認時使用，避免誤扣
             session.setAttribute("pendingOrderId", order.getId());
+            
+            // 如果選擇信用卡，導向刷卡頁面
+            if ("credit_card".equals(paymentMethod)) {
+                return "credit_card_payment";
+            }
+            
             return "paymentStatus";
         }
     }
+
+    @PostMapping("/process-credit-card")
+    public String processCreditCard(
+            @RequestParam("cardNumber") String cardNumber,
+            @RequestParam("expiry") String expiry,
+            @RequestParam("cvv") String cvv,
+            HttpSession session, Model model) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) return "redirect:/login";
+
+        // 這裡進行模擬刷卡邏輯
+        String lastFourDigits = (cardNumber != null && cardNumber.length() >= 4) ? 
+                                cardNumber.substring(cardNumber.length() - 4) : "****";
+        System.out.println("正在處理使用者 " + user.getUsername() + " 的信用卡支付，卡號後四碼: " + lastFourDigits);
+        
+        // 取得待處理訂單並更新狀態
+        Long idToPay = (Long) session.getAttribute("pendingOrderId");
+        if (idToPay != null) {
+            paymentStatus(idToPay, session, model);
+        }
+        return "paymentStatus"; // 刷卡完留在狀態頁面看結果
+    }
+
     @PostMapping("/paymentstatus_2")
     public String paymentStatus(@RequestParam(value = "orderId", required = false) Long orderId, HttpSession session , Model model) {
         User user = (User) session.getAttribute("user"); 
@@ -265,23 +311,34 @@ public class UserController {
             // 優先使用傳入的 ID，若無則從 session 拿，最後才抓最新的（增加安全性）
             Long idToPay = (orderId != null) ? orderId : (Long) session.getAttribute("pendingOrderId");
             Order order = (idToPay != null) ? orderRepository.findById(idToPay).orElse(null) : orderRepository.findTopByUserOrderByIdDesc(user);
-            
+
             if (order != null && "false".equals(order.getPaymentStatus())) {
+                // 1. 取得資料庫中最新的使用者物件，避免點數計算錯誤
+                User dbUser = userRepository.findById(user.getId()).orElse(user);
+
+                // 2. 扣除該訂單使用的點數
+                dbUser.setPoints(dbUser.getPoints() - order.getUsedPoints());
+
+                // 3. 更新訂單狀態並發送郵件
                 order.setPaymentStatus("true");
                 orderRepository.save(order);
                 sendOrderConfirmationEmail(user, order); // 發送訂單確認郵件
-                addLoyaltyPoints(user, order); // 新增：發放點數
+                
+                // 4. 計算並增加新獲得的點數，最後存入資料庫與更新 Session
+                addLoyaltyPoints(dbUser, order, session); 
                 session.removeAttribute("pendingOrderId"); // 清除待處理訂單ID
-                model.addAttribute("lastOrder", order);
             }
-            return "redirect:/menu";  
+            model.addAttribute("order", order); // 確保 order 物件傳回前端
+            model.addAttribute("message", "決済が正常に完了しました！");
+            return "paymentStatus"; // 改為返回頁面而非重定向，這樣才看得到「支払済」
         }
     }
-    public void addLoyaltyPoints(User user, Order order) {
+    public void addLoyaltyPoints(User user, Order order, HttpSession session) {
         if (order.getTotal() > 0) {
             int pointsEarned = (int) Math.floor(order.getTotal() * 0.01); // 消費金額的1%點數，向下取整
             user.setPoints(user.getPoints() + pointsEarned);
             userRepository.save(user); // 更新用戶點數
+            session.setAttribute("user", user); // 同步更新 Session，讓導覽列點數即時跳動
             System.out.println("用戶 " + user.getUsername() + " 獲得了 " + pointsEarned + " 點。總點數: " + user.getPoints());
         }
     }  
@@ -330,12 +387,8 @@ public class UserController {
             return "redirect:/login"; 
         }else{
             Order order = orderRepository.findById(id).orElse(null);
-            if (order != null && order.getUser().getId().equals(user.getId())) 
-            {
-                order.setPaymentStatus("true");
-                orderRepository.save(order);
-            }
-            return history(session, model);
+            // 呼叫統一的支付處理邏輯，確保點數也會被扣除
+            return paymentStatus(id, session, model);
         }
     }
 
@@ -387,7 +440,7 @@ public class UserController {
         }
         return "redirect:/profile";
     }
-    
+
     @GetMapping("/signup")
     public String signupPage() {
         return "signup";

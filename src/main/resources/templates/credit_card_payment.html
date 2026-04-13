@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クレジットカード決済</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .payment-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; }
+        .payment-container h2 { margin-bottom: 20px; color: #1a1a1a; text-align: center; }
+        .order-summary { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #9E76B4; }
+        .order-summary p { margin: 5px 0; color: #666; }
+        .total { font-size: 1.2em; color: #d9534f; font-weight: bold; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 0.9em; color: #444; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .form-row { display: flex; gap: 15px; }
+        .btn-submit { width: 100%; padding: 14px; background-color: #9E76B4; color: white; border: none; border-radius: 6px; font-size: 1.1em; cursor: pointer; font-weight: bold; }
+        .btn-submit:hover { background-color: #7d5b92; }
+        .footer-note { text-align: center; margin-top: 20px; font-size: 0.8em; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <h2>クレジットカード決済</h2>
+        
+        <div class="order-summary" th:if="${order != null}">
+            <p>注文ID：<span th:text="${order.id}">001</span></p>
+            <p class="total">支払金額：<span th:text="${order.total}">0</span> 円</p>
+        </div>
+
+        <form th:action="@{/process-credit-card}" method="post">
+            <div class="form-group">
+                <label>カード名義人</label>
+                <input type="text" placeholder="TARO YAMADA" required>
+            </div>
+            <div class="form-group">
+                <label>カード番号</label>
+                <input type="text" name="cardNumber" placeholder="1234123412341234" maxlength="16" required pattern="\d{16}">
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:2">
+                    <label>有効期限 (MM/YY)</label>
+                    <input type="text" name="expiry" placeholder="MM/YY" maxlength="5" required>
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>CVV</label>
+                    <input type="password" name="cvv" placeholder="123" maxlength="3" required pattern="\d{3}">
+                </div>
+            </div>
+            <button type="submit" class="btn-submit">決済を確定する</button>
+        </form>
+        
+        <div class="footer-note">
+            🔒 安全なSSL通信で暗号化されています。
+        </div>
+    </div>
+</body>
+</html>

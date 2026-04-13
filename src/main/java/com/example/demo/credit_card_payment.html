@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信用卡安全支付</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .payment-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; }
+        .payment-container h2 { margin-bottom: 20px; color: #1a1a1a; text-align: center; font-weight: 600; }
+        .order-summary { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #007bff; }
+        .order-summary p { margin: 5px 0; color: #666; }
+        .order-summary .total { font-size: 1.2em; color: #d9534f; font-weight: bold; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 0.9em; color: #444; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
+        .btn-submit { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-submit:hover { background-color: #0056b3; }
+        .footer-note { text-align: center; margin-top: 20px; font-size: 0.8em; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <h2>信用卡支付</h2>
+        
+        <div class="order-summary">
+            <p>訂單編號：<span th:text="${order.id}">001</span></p>
+            <p class="total">應付金額：NT$ <span th:text="${order.total}">0</span></p>
+        </div>
+
+        <form th:action="@{/process-credit-card}" method="post">
+            <div class="form-group">
+                <label>持卡人姓名</label>
+                <input type="text" placeholder="例如：WANG XIAO MING" required>
+            </div>
+            <div class="form-group">
+                <label>卡號</label>
+                <input type="text" name="cardNumber" placeholder="xxxx xxxx xxxx xxxx" maxlength="16" required pattern="\d{16}">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>到期日 (MM/YY)</label>
+                    <input type="text" name="expiry" placeholder="MM/YY" maxlength="5" required>
+                </div>
+                <div class="form-group">
+                    <label>安全碼 (CVV)</label>
+                    <input type="password" name="cvv" placeholder="123" maxlength="3" required pattern="\d{3}">
+                </div>
+            </div>
+            <button type="submit" class="btn-submit">確認支付</button>
+        </form>
+        
+        <div class="footer-note">
+            🔒 此頁面符合 PCI 數據安全標準，您的資料已加密處理。
+        </div>
+    </div>
+</body>
+</html>

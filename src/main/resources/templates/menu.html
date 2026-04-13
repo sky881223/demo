@@ -179,19 +179,54 @@
         </div>
 
         <div class="action-bar">
-            <div class="row align-items-center justify-content-center g-3">
-                <div class="col-md-7">
-                    <div class="mb-3 text-start">
-                        <label class="form-label fw-bold text-muted small"><i class="bi bi-pencil-square me-1"></i> 注文の備考 (アレルギーやご要望など)</label>
-                        <textarea name="note" class="form-control" rows="2" placeholder="例：ご飯少なめ、ネギ抜きなど" style="border-radius: 10px; border: 1px solid #ddd;"></textarea>
+            <!-- 詳細設定摺疊區域 -->
+            <div class="collapse" id="orderOptions">
+                <div class="row g-3 mb-3 text-start">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small"><i class="bi bi-pencil-square me-1"></i> 注文の備考</label>
+                        <textarea name="note" class="form-control form-control-sm" rows="2" placeholder="アレルギーやご要望など" style="border-radius: 10px;"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-custom-primary w-100 py-3 fw-bold fs-5" th:disabled="${!isOpen}">
-                        <i class="bi bi-cart-check me-2"></i> 合計を計算して注文する
+                    <div class="col-md-6">
+                        <!-- 支付方式 -->
+                        <div class="p-2 border rounded bg-light mb-2">
+                            <label class="form-label fw-bold text-muted small d-block mb-1"><i class="bi bi-credit-card me-1"></i> 支払い方法</label>
+                            <div class="form-check form-check-inline small">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="methodCash" value="cash" checked>
+                                <label class="form-check-label" for="methodCash">現金</label>
+                            </div>
+                            <div class="form-check form-check-inline small">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="methodCard" value="credit_card">
+                                <label class="form-check-label" for="methodCard">カード</label>
+                            </div>
+                        </div>
+                        <!-- 點數折抵 -->
+                        <div class="p-2 border rounded bg-light" th:if="${session.user != null}">
+                            <label class="form-label fw-bold text-muted small d-block mb-1"><i class="bi bi-star me-1"></i> ポイント利用 (保有: <span th:text="${session.user.points}">0</span> pt)</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="usedPoints" class="form-control" min="0" th:max="${session.user.points}" value="0">
+                                <span class="input-group-text">pt</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-3 opacity-25">
+            </div>
+
+            <!-- 精簡後的主操作列 -->
+            <div class="row align-items-center justify-content-center g-2">
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2" data-bs-toggle="collapse" data-bs-target="#orderOptions" title="注文オプション">
+                        <i class="bi bi-sliders"></i>
                     </button>
                 </div>
-                <div class="col-md-3">
-                    <button type="button" class="btn btn-light w-100 py-3 fw-bold border" onclick="location.href='/profile'">
-                        <i class="bi bi-person-circle me-1"></i> プロフィール
+                <div class="col-md-7">
+                    <button type="submit" class="btn btn-custom-primary w-100 py-3 fw-bold fs-5" th:disabled="${!isOpen}">
+                        <i class="bi bi-cart-check me-2"></i> 注文を確定する
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-light px-3 py-2 border" onclick="location.href='/profile'" title="プロフィール">
+                        <i class="bi bi-person-circle fs-5"></i>
                     </button>
                 </div>
             </div>
