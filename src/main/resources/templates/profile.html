@@ -12,9 +12,11 @@
         .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.3s; }
         .card:hover { transform: translateY(-5px); }
         .tier-badge { padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+        .tier-diamond { background-color: #b9f2ff; color: #0080ff; border: 1px solid #0080ff; }
         .tier-gold { background-color: #ffd700; color: #856404; }
         .tier-silver { background-color: #e2e2e2; color: #495057; }
         .tier-bronze { background-color: #cd7f32; color: white; }
+        .tier-general { background-color: #f0f0f0; color: #888; }
         .progress { height: 12px; border-radius: 10px; background-color: #e9ecef; }
         .stats-icon { font-size: 2rem; opacity: 0.3; position: absolute; right: 20px; bottom: 10px; }
         .order-item { border-left: 4px solid #667eea; margin-bottom: 10px; padding: 10px 15px; background: white; border-radius: 8px; }
@@ -29,8 +31,12 @@
         </div>
         <h2 th:text="${currentUser.username}">ユーザー名</h2>
         <p class="mb-2"><i class="bi bi-envelope"></i> <span th:text="${currentUser.email}">email@example.com</span></p>
-        <span th:class="'tier-badge ' + (${tier == 'ゴールド会員' ? 'tier-gold' : (tier == 'シルバー会員' ? 'tier-silver' : 'tier-bronze')})" 
-              th:text="${tier}">ブロンズ会員</span>
+        <span class="tier-badge" 
+              th:classappend="${tier == 'ダイヤ会員' ? 'tier-diamond' : 
+                               (tier == 'ゴールド会員' ? 'tier-gold' : 
+                               (tier == 'シルバー会員' ? 'tier-silver' : 
+                               (tier == 'ブロンズ会員' ? 'tier-bronze' : 'tier-general')))}" 
+              th:text="${tier}">一般会員</span>
     </div>
 </div>
 
@@ -43,7 +49,7 @@
                 <div class="d-flex justify-content-between mb-2">
                     <span>現在のポイント: <strong th:text="${currentUser.points}">0</strong> pt</span>
                     <span th:if="${pointsToNext > 0}">次ランクまであと: <strong th:text="${pointsToNext}">0</strong> pt</span>
-                    <span th:if="${pointsToNext <= 0}">最高ランクに到達しました！</span>
+                    <span th:if="${pointsToNext == 0}">最高ランクに到達しました！</span>
                 </div>
                 <div class="progress mb-3">
                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" 

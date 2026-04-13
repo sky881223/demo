@@ -446,11 +446,14 @@ public class UserController {
 
         // 3. 計算會員等級與升級進度
         int points = latestUser.getPoints();
-        String tier = "ブロンズ会員"; // 青銅
+        String tier = "一般会員"; // 青銅
         double progress = (points / 100.0) * 100;
         int pointsToNext = 100 - points;
-
-        if (points >= 500) {
+        if (points >= 1000) {
+            tier = "ダイヤ会員"; // ダイヤ
+            progress = 100.0;
+            pointsToNext = 0;
+        } else if (points >= 500) {
             tier = "ゴールド会員"; // 黃金
             progress = 100.0;
             pointsToNext = 0;
@@ -458,6 +461,14 @@ public class UserController {
             tier = "シルバー会員"; // 白銀
             progress = ((points - 100) / 400.0) * 100;
             pointsToNext = 500 - points;
+        } else if (points >= 50) {
+            tier = "ブロンズ会員"; // 青銅
+            progress = ((points - 50) / 50.0) * 100;
+            pointsToNext = 100 - points;
+        } else {
+            tier = "一般会員"; // 一般
+            progress = (points / 50.0) * 100;
+            pointsToNext = 50 - points;
         }
 
         // 4. 計算累積消費總額 (僅計算已支付訂單)
