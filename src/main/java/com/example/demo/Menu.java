@@ -11,9 +11,9 @@ public class Menu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String category;
-    private String name;           
-    private String photo;          
-    private String description;    
-    private Integer price;         
-    private String provideDate;    
+    private String name;
+    private String photo;
+    private String description;
+    private Integer price;
+    private String provideDate;
 }

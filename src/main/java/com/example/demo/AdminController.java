@@ -5,6 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -30,6 +31,8 @@ public class AdminController {
     private OrderDetailRepository orderDetailRepository;
     @Autowired
     private AdminRepository adminRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     // 獲取菜單管理頁面
     @GetMapping("/menu")
@@ -197,5 +200,35 @@ public class AdminController {
         model.addAttribute("orderCount", orderCount);
         model.addAttribute("totalRevenue", totalRevenue);
         return "admin_profile";
+    }
+
+    // 管理者向けのユーザー一覧表示機能
+    @GetMapping("/users")
+    public String listUsers(HttpSession session, Model model) {
+        Admin admin = (Admin) session.getAttribute("adminUser");
+        if (admin == null) {
+            return "redirect:/admin/adminlogin";
+        }
+        List<User> users = userRepository.findAll();
+        model.addAttribute("users", users);
+        return "admin_users";
+    }
+
+    // ユーザー削除機能
+    @PostMapping("/users/delete")
+    @Transactional
+    public String deleteUser(@RequestParam("userId") Long userId, HttpSession session) {
+        Admin admin = (Admin) session.getAttribute("adminUser");
+        if (admin == null) {
+            return "redirect:/admin/adminlogin";
+        }
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            // 整合性を保つため、ユーザーに関連する注文を先に削除
+            List<Order> userOrders = orderRepository.findByUser(user);
+            orderRepository.deleteAll(userOrders);
+            userRepository.delete(user);
+        }
+        return "redirect:/admin/users";
     }
 }
