@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class UserController {
-    @Autowired
+    @Autowired // 注入所需的服務與 Repository
     private UserRepository userRepository;
     @Autowired
     private OrderRepository orderRepository;
@@ -42,6 +42,7 @@ public class UserController {
                 && password.matches(".*[0-9].*");
     }
 
+    // 註冊表單提交：驗證密碼強度並發送電子郵件驗證碼
     @PostMapping("/saveUser")
     public String handleForm(@RequestParam("email") String email, @RequestParam("name") String name,
             @RequestParam("password") String password, Model model, HttpSession session) {
@@ -62,8 +63,9 @@ public class UserController {
     @Autowired
     private JavaMailSender mailSender;
 
+    // 發送驗證碼郵件
     public String sendVerificationCode(String toEmail) {
-
+        // 隨機產生 6 位數驗證碼
         String code = String.valueOf((int) ((Math.random() * 900000) + 100000));
 
         SimpleMailMessage message = new SimpleMailMessage();
@@ -82,12 +84,7 @@ public class UserController {
         return code;
     }
 
-    /**
-     * Sends an order confirmation email to the user after successful payment.
-     * 
-     * @param user  The user who placed the order.
-     * @param order The confirmed and paid order.
-     */
+    // 付款成功後發送訂單確認信
     public void sendOrderConfirmationEmail(User user, Order order) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("107407002@stud.sju.edu.tw"); // 請確保這裡的發件人郵箱與你的郵件服務配置一致
@@ -126,6 +123,7 @@ public class UserController {
         }
     }
 
+    // 驗證輸入的 Pin Code 是否正確
     @PostMapping("/verifyCode")
     public String verifyCode(@RequestParam("verifyCode") String verifyCode, HttpSession session, Model model) {
         String correctCode = (String) session.getAttribute("code");
@@ -152,6 +150,7 @@ public class UserController {
         }
     }
 
+    // 使用者登入邏輯
     @PostMapping("/login_2")
     public String login(@RequestParam("email") String email, @RequestParam("password") String password, Model model,
             HttpSession session) {
@@ -170,6 +169,7 @@ public class UserController {
         }
     }
 
+    // 忘記密碼處理：發送驗證碼
     @PostMapping("/forgottenpassword_2")
     public String forgottenpassword(@RequestParam("email") String email,
             @RequestParam("newpassword") String newPassword, Model model, HttpSession session) {
@@ -187,6 +187,7 @@ public class UserController {
         }
     }
 
+    // 重設使用者名稱
     @PostMapping("/resetName_2")
     public String resetName(@RequestParam("newname") String newName, Model model, HttpSession session) {
         String email = (String) session.getAttribute("email");
@@ -206,6 +207,7 @@ public class UserController {
         return "resetName";
     }
 
+    // 加入購物車並建立初始訂單 (處理營業時間、點數扣抵、支付方式選擇)
     @PostMapping("/add-to-cart")
     public String addToCart(
             @RequestParam(value = "menuIds", required = false) List<Long> menuIds,
@@ -219,6 +221,7 @@ public class UserController {
         if (user == null) {
             return "redirect:/login";
         } else {
+            // 檢查營業時間 (06:00 - 23:45)
             LocalTime now = LocalTime.now(ZoneId.of("Asia/Tokyo"));
             LocalTime openTime = LocalTime.of(6, 0);
             LocalTime closeTime = LocalTime.of(23, 45);
@@ -236,7 +239,7 @@ public class UserController {
             order.setPaymentStatus("false");
             order.setPaymentMethod(paymentMethod);
 
-            // 點數抵扣初步驗證 (防止輸入超過持有數量)
+            // 驗證點數扣抵：不可超過使用者擁有的點數
             if (usedPoints > user.getPoints()) {
                 usedPoints = user.getPoints();
             }
@@ -285,6 +288,7 @@ public class UserController {
         }
     }
 
+    // 模擬信用卡刷卡處理
     @PostMapping("/process-credit-card")
     public String processCreditCard(
             @RequestParam("cardNumber") String cardNumber,
@@ -309,6 +313,7 @@ public class UserController {
         return "paymentStatus"; // 刷卡完留在狀態頁面看結果
     }
 
+    // 更新付款狀態並計算點數 (核心支付完成邏輯)
     @PostMapping("/paymentstatus_2")
     public String paymentStatus(@RequestParam(value = "orderId", required = false) Long orderId, HttpSession session,
             Model model) {
@@ -343,6 +348,7 @@ public class UserController {
         }
     }
 
+    // 點數回饋邏輯：消費額的 1%
     public void addLoyaltyPoints(User user, Order order, HttpSession session) {
         if (order.getTotal() > 0) {
             int pointsEarned = (int) Math.floor(order.getTotal() * 0.01); // 消費金額的1%點數，向下取整
@@ -355,6 +361,7 @@ public class UserController {
         }
     }
 
+    // 顯示點數歷史與目前的點數
     @GetMapping("/points-history")
     public String pointsHistory(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
@@ -370,6 +377,7 @@ public class UserController {
         return "points_history";
     }
 
+    // 顯示使用者的訂單歷史紀錄
     @PostMapping("/history_2")
     public String history(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
@@ -397,6 +405,7 @@ public class UserController {
         }
     }
 
+    // 使用者取消尚未付款的訂單
     @PostMapping("/cancel-order")
     public String cancelOrder(@RequestParam("orderId") Long orderId, HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
@@ -410,6 +419,7 @@ public class UserController {
         return history(session, model);
     }
 
+    // 從歷史紀錄點擊支付未完成的訂單
     @PostMapping("/pay")
     public String pay(@RequestParam("id") Long id, HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
@@ -426,6 +436,7 @@ public class UserController {
         return "home";
     }
 
+    // 顯示個人資料頁面：包含會員等級計算、累積消費、升級進度等
     @GetMapping("/profile")
     public String showProfile(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
@@ -434,11 +445,11 @@ public class UserController {
         }
         // 從資料庫重新取得最新的使用者資料，確保顯示的點數是最即時的
         User latestUser = userRepository.findById(user.getId()).orElse(user);
-        
+
         // 1. 獲取所有訂單以計算統計數據
         List<Order> allOrders = orderRepository.findByUser(latestUser);
-        
-        // 2. 獲取最近 3 筆訂單，增加頁面內容豐富度
+
+         // 2. 獲取最近 3 筆訂單，增加頁面內容豐富度
         List<Order> recentOrders = allOrders.stream()
                 .sorted((o1, o2) -> o2.getId().compareTo(o1.getId()))
                 .limit(3)
@@ -488,6 +499,7 @@ public class UserController {
         return "profile";
     }
 
+    // 上傳個人頭像
     @PostMapping("/profile/uploadPhoto")
     public String uploadPhoto(@RequestParam("imageFile") MultipartFile imageFile, HttpSession session) {
         User user = (User) session.getAttribute("user");

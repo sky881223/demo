@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequestMapping("/admin")
 public class AdminController {
 
-    @Autowired
+    @Autowired // 自動注入 Repository
     private MenuRepository menuRepository;
     @Autowired
     private OrderRepository orderRepository;
@@ -31,18 +31,20 @@ public class AdminController {
     @Autowired
     private AdminRepository adminRepository;
 
+    // 獲取菜單管理頁面
     @GetMapping("/menu")
     public String manageMenu(Model model, HttpSession session) {
-        Admin admin = (Admin) session.getAttribute("adminUser"); 
+        Admin admin = (Admin) session.getAttribute("adminUser"); // 檢查管理者是否已登入
         if (admin == null) {
             return "redirect:/admin/adminlogin"; 
         }
-        List<Menu> allMenus = menuRepository.findAll();
+        List<Menu> allMenus = menuRepository.findAll(); // 取得所有菜單內容
         model.addAttribute("menus", allMenus);
         model.addAttribute("newMenu", new Menu()); 
         return "admin_menu";
     }
 
+    // 新增菜單項目
     @PostMapping("/menu/add")
     public String addMenu(@ModelAttribute Menu menu, @RequestParam(value = "imageFile", required = false) MultipartFile imageFile, HttpSession session) {
         Admin admin = (Admin) session.getAttribute("adminUser");
@@ -50,32 +52,34 @@ public class AdminController {
             return "redirect:/admin/adminlogin";
         }
 
-        if (imageFile != null && !imageFile.isEmpty()) {
+        if (imageFile != null && !imageFile.isEmpty()) { // 處理圖片上傳
             try {
-                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename(); // 生成唯一檔名
                 String uploadDir = "uploads/";
                 Path uploadPath = Paths.get(uploadDir);
                 if (!Files.exists(uploadPath)) {
                     Files.createDirectories(uploadPath);
                 }
                 Path filePath = uploadPath.resolve(fileName);
-                Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING); // 儲存檔案
                 menu.setPhoto("/uploads/" + fileName);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        menuRepository.save(menu); 
+        menuRepository.save(menu); // 儲存到資料庫
         return "redirect:/admin/menu";
     }
 
+    // 刪除菜單項目
     @PostMapping("/menu/delete")
     public String deleteMenu(@RequestParam Long id, Model model, HttpSession session) {
         Admin admin = (Admin) session.getAttribute("adminUser"); 
         if (admin == null) {
             return "redirect:/admin/adminlogin"; 
         }
+        // 檢查該菜單是否已有訂單使用，若有則不可刪除（維持資料一致性）
         boolean isUsed = orderDetailRepository.findAll().stream()
                 .anyMatch(detail -> detail.getMenu().getId().equals(id));
 
@@ -90,18 +94,22 @@ public class AdminController {
         menuRepository.deleteById(id);
         return "redirect:/admin/menu";
     }
+
+    // 管理者登入處理
     @PostMapping("/adminlogin_2")
     public String adminLogin(@RequestParam("admin_email") String adminEmail, @RequestParam("admin_password") String adminPassword, HttpSession session,Model model) {
         System.out.println("正在管理者登入");
         Admin admin = adminRepository.findByEmail(adminEmail);
-        if (admin != null && admin.getPassword().equals(adminPassword)) {
+        if (admin != null && admin.getPassword().equals(adminPassword)) { // 驗證密碼
             session.setAttribute("adminUser", admin);
-            return "admin_profile";
+            return "redirect:/admin/adminprofile";
         } else {
             model.addAttribute("error", "無効な管理者メールアドレスまたはパスワードです。");
             return "admin_login";
         }
     }
+
+    // 檢視所有歷史訂單與銷售統計
     @GetMapping("/history")
     public String adminHistory(HttpSession session,Model model){
         Admin admin = (Admin) session.getAttribute("adminUser"); 
@@ -109,10 +117,12 @@ public class AdminController {
             return "redirect:/admin/adminlogin"; 
         }
         System.out.println("正在檢視所有歷史紀錄");
-        List<Order> orders = orderRepository.findAll();
+        List<Order> orders = orderRepository.findAll(); // 獲取所有訂單
         model.addAttribute("orders", orders);
+
+        // 計算各項餐點的銷售總量
         List<Menu> allMenus = menuRepository.findAll();
-        List<MenuSales> salesData = orderDetailRepository.findAllMenuSales();
+        List<MenuSales> salesData = orderDetailRepository.findAllMenuSales(); // 從 Repository 獲取銷售統計
         Map<Long, Long> salesMap = new HashMap<>();
         for (MenuSales data : salesData) {
             Long qty = data.getTotalQuantity() != null ? data.getTotalQuantity() : 0L;
@@ -121,6 +131,7 @@ public class AdminController {
         model.addAttribute("menus", allMenus);
         model.addAttribute("salesMap", salesMap);
 
+        // 分類已付款與未付款訂單
         List<Order> paymentstatusOrders = orderRepository.findByPaymentStatus("true");
         model.addAttribute("paymentstatusOrders", paymentstatusOrders);
 
@@ -130,6 +141,7 @@ public class AdminController {
         return "admin_history";
     }
 
+    // 管理者取消/刪除訂單
     @PostMapping("/admin_cancel-order")
     public String adminCancelOrder(@RequestParam("orderId") Long orderId, Model model, HttpSession session) {
         Admin admin = (Admin) session.getAttribute("adminUser"); 
@@ -144,32 +156,46 @@ public class AdminController {
         return adminHistory(session,model);
     }
 
-
+    // 檢視歷史紀錄（純查詢）
     @GetMapping("/admin_history")
     public String viewAdminHistory(Model model) {
         List<Order> orders = orderRepository.findAll();
         model.addAttribute("orders", orders);
         return "admin_history";
     }
+
+    // 顯示管理登入頁面
     @GetMapping("/adminlogin")
     public String adminLoginPage() {
         return "admin_login";
     }
+
+    // 管理者登出
     @GetMapping("/adminlogout")
     public String adminLogout(HttpSession session) {
         session.invalidate();
         return "redirect:/";
     }
+
+    // 顯示管理者的個人檔案與數據儀表板
     @GetMapping("/adminprofile")
     public String showAdminProfile(HttpSession session, Model model) {
-        System.out.print("管理員!!!!!");
         Admin admin = (Admin) session.getAttribute("adminUser"); 
         if (admin == null) {
-            System.out.print("admin == null");
             return "admin_login";
         }
-        System.out.print("admin != null");
+
+        // 1. 獲取統計數據
+        long menuCount = menuRepository.count();
+        long orderCount = orderRepository.count();
+        int totalRevenue = orderRepository.findByPaymentStatus("true").stream()
+                .mapToInt(Order::getTotal)
+                .sum();
+
         model.addAttribute("adminUser", admin); 
+        model.addAttribute("menuCount", menuCount);
+        model.addAttribute("orderCount", orderCount);
+        model.addAttribute("totalRevenue", totalRevenue);
         return "admin_profile";
     }
 }
