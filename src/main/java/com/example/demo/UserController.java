@@ -79,7 +79,7 @@ public class UserController {
             mailSender.send(message);
         } catch (Exception e) {
             System.out.println("發信失敗，錯誤原因：" + e.getMessage());
-            e.printStackTrace();    
+            e.printStackTrace();
         }
         return code;
     }
@@ -161,7 +161,7 @@ public class UserController {
         if (user != null && user.getPassword().equals(password)) {
             session.setAttribute("user", user);
             System.out.println("密碼正確");
-            return "redirect:/profile";
+            return "redirect:/menu";
         } else {
             model.addAttribute("error", "メールアドレスまたはパスワードが間違っています。");
             System.out.println("メールアドレスまたはパスワードが間違っています。");
