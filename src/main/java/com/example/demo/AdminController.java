@@ -195,7 +195,7 @@ public class AdminController {
                 .mapToInt(Order::getTotal)
                 .sum();
 
-        model.addAttribute("adminUser", admin); 
+        model.addAttribute("adminUser", admin);
         model.addAttribute("menuCount", menuCount);
         model.addAttribute("orderCount", orderCount);
         model.addAttribute("totalRevenue", totalRevenue);

@@ -59,6 +59,7 @@
                 <div class="mt-4">
                     <a href="/points-history" class="btn btn-outline-primary btn-sm">ポイント履歴を見る</a>
                     <a href="/resetName" class="btn btn-outline-secondary btn-sm">名前変更</a>
+                    <a href="/forgotPassword" class="btn btn-outline-danger btn-sm">パスワード変更</a>
                     <form th:action="@{/profile/uploadPhoto}" method="post" enctype="multipart/form-data" class="d-inline-block ms-2">
                         <label for="imageFile" class="btn btn-outline-dark btn-sm m-0">写真変更</label>
                         <input type="file" id="imageFile" name="imageFile" style="display:none;" onchange="this.form.submit()">
