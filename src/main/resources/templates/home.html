@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>test</title>
+    <title>いらっしゃいませ - Demo App</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 
-    
     <style>
         body {
-            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1f9 100%);
+            /* 背景画像を追加し、少し暗くしてカードを目立たせる */
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                        url('https://images.unsplash.com/photo-1493770348161-369560ae357d?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
             min-height: 100vh;
             display: flex;
             align-items: center;
-            font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, sans-serif;
         }
         
         /* 進場動畫 */
@@ -31,12 +33,13 @@
         }
 
         .custom-card {
-            background: rgba(255, 255, 255, 0.8) !important;
-            backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(15px); /* 磨砂玻璃效果 */
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
             transition: all 0.3s ease;
-            border-radius: 20px !important;
+            border-radius: 25px !important;
             animation: fadeInUp 0.8s ease-out;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
         }
 
         .custom-card:hover {
@@ -51,6 +54,7 @@
             color: white;
             transition: all 0.3s ease;
             letter-spacing: 1px;
+            padding: 15px;
         }
 
         .btn-login-custom:hover {
@@ -65,6 +69,7 @@
             border: 2px solid #9E76B4 !important;
             border-radius: 12px;
             background: transparent;
+            padding: 15px;
             transition: all 0.3s ease;
         }
 
@@ -82,6 +87,14 @@
         .admin-link:hover {
             color: #9E76B4;
         }
+
+        .app-logo-icon {
+            font-size: 5rem;
+            background: linear-gradient(45deg, #9E76B4, #ff8a80);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body class="p-3">
@@ -93,16 +106,16 @@
             <div class="card custom-card shadow-sm border-0">
                 <div class="card-body p-4 p-md-5 text-center">
                     <div class="mb-4">
-                        <i class="bi bi- bag-heart-fill" style="font-size: 4.5rem; color: #9E76B4;"></i>
+                        <i class="bi bi-bag-heart-fill app-logo-icon"></i>
                     </div>
-                    <h2 class="fw-bold mb-3" style="color: #495057;">いらっしゃいませ</h2>
-                    <p class="text-muted mb-5">美味しい体験を。はじめるにはログインしてください。</p>
+                    <h1 class="fw-bold mb-3" style="color: #333;">いらっしゃいませ</h1>
+                    <p class="text-muted mb-5">嚴選された食材で作る最高の料理をお届けします。はじめるにはログインしてください。</p>
                     
                     <div class="d-grid gap-3">
-                        <button class="btn btn-login-custom py-3 fw-bold" onclick="location.href='login'">
+                        <button class="btn btn-login-custom fw-bold" onclick="location.href='login'">
                             <i class="bi bi-box-arrow-in-right me-2"></i>ログイン
                         </button>
-                        <button class="btn btn-outline-custom py-3 fw-bold" onclick="location.href='signup'">
+                        <button class="btn btn-outline-custom fw-bold" onclick="location.href='signup'">
                             <i class="bi bi-person-plus me-2"></i>アカウント作成
                         </button>
                     </div>

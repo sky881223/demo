@@ -52,6 +52,7 @@ public class UserController {
             session.setAttribute("code", code);
             session.setAttribute("name", name);
             session.setAttribute("password", password);
+            session.removeAttribute("newpassword"); // 確保不會誤判為重設密碼流程
             return "pincode";
         } else {
             model.addAttribute("error", "パスワードは8文字以上にしてください。");
@@ -135,14 +136,22 @@ public class UserController {
                 user.setUsername((String) session.getAttribute("name"));
                 user.setPassword((String) session.getAttribute("password"));
                 user.setPoints(0); // 新用戶點數初始化為0
-                session.removeAttribute("code");
                 userRepository.save(user);
             } else if (session.getAttribute("newpassword") != null) {
                 User user = userRepository.findByEmail((String) session.getAttribute("email"));
-                user.setPassword((String) session.getAttribute("password"));
-                session.removeAttribute("code");
-                userRepository.save(user);
+                if (user != null) {
+                    user.setPassword((String) session.getAttribute("password"));
+                    userRepository.save(user);
+                } else {
+                    model.addAttribute("error", "ユーザーが見つかりませんでした。");
+                    return "forgottenpassword";
+                }
             }
+            // 驗證成功後清除所有相關暫存 Session，避免影響下次操作
+            session.removeAttribute("code");
+            session.removeAttribute("name");
+            session.removeAttribute("newpassword");
+            session.removeAttribute("password");
             return "login";
         } else {
             model.addAttribute("error", "コード間違いました。もう一度入力してください。");
@@ -174,12 +183,13 @@ public class UserController {
     public String forgottenpassword(@RequestParam("email") String email,
             @RequestParam("newpassword") String newPassword, Model model, HttpSession session) {
         System.out.println("正在重置密碼");
-        String code = sendVerificationCode(email);
-        session.setAttribute("email", email);
-        session.setAttribute("code", code);
-        session.setAttribute("password", newPassword);
         if (isValidPassword(newPassword)) {
+            String code = sendVerificationCode(email);
+            session.setAttribute("email", email);
+            session.setAttribute("code", code);
+            session.setAttribute("password", newPassword);
             session.setAttribute("newpassword", newPassword);
+            session.removeAttribute("name"); // 重要：移除註冊用的名字，確保 verifyCode 進入正確分支
             return "pincode";
         } else {
             model.addAttribute("error", "パスワードは8文字以上にしてください。");
@@ -197,10 +207,13 @@ public class UserController {
         User user = userRepository.findByEmailAndPassword(email, password);
         if (user != null) {
             user.setUsername(newName);
-            userRepository.save(user);
-            model.addAttribute("message", "名前が正常にリセットされました。");
-            model.addAttribute("currentUser", user);
-            return "profile";
+            user = userRepository.save(user); // 取得儲存後包含 ID 的完整物件
+            
+            // 重點：更新 Session 裡的使用者資料，讓導覽列同步更新
+            session.setAttribute("user", user);
+            
+            // 改用重定向，讓頁面重新執行 showProfile 的邏輯
+            return "redirect:/profile";
         } else {
             model.addAttribute("error", "ユーザーが見つかりませんでした。");
         }
@@ -239,10 +252,8 @@ public class UserController {
             order.setPaymentStatus("false");
             order.setPaymentMethod(paymentMethod);
 
-            // 驗證點數扣抵：不可超過使用者擁有的點數
-            if (usedPoints > user.getPoints()) {
-                usedPoints = user.getPoints();
-            }
+            // 驗證點數扣抵：範圍檢查，不可為負數且不可超過使用者擁有的點數
+            usedPoints = Math.max(0, Math.min(usedPoints, user.getPoints()));
             order.setUsedPoints(usedPoints);
 
             order.setNote(note);
@@ -331,12 +342,13 @@ public class UserController {
                 User dbUser = userRepository.findById(user.getId()).orElse(user);
 
                 // 2. 扣除該訂單使用的點數
-                dbUser.setPoints(dbUser.getPoints() - order.getUsedPoints());
+                int newPoints = dbUser.getPoints() - order.getUsedPoints();
+                dbUser.setPoints(Math.max(0, newPoints)); // 再次確保點數不為負數
 
                 // 3. 更新訂單狀態並發送郵件
                 order.setPaymentStatus("true");
                 orderRepository.save(order);
-                sendOrderConfirmationEmail(user, order); // 發送訂單確認郵件
+                sendOrderConfirmationEmail(dbUser, order); // 傳入 dbUser 確保資料最新
 
                 // 4. 計算並增加新獲得的點數，最後存入資料庫與更新 Session
                 addLoyaltyPoints(dbUser, order, session);
@@ -355,10 +367,54 @@ public class UserController {
             order.setEarnedPoints(pointsEarned); // 紀錄到訂單中，以便顯示明細
             orderRepository.save(order);
             user.setPoints(user.getPoints() + pointsEarned);
-            userRepository.save(user); // 更新用戶點數
-            session.setAttribute("user", user); // 同步更新 Session，讓導覽列點數即時跳動
-            System.out.println("用戶 " + user.getUsername() + " 獲得了 " + pointsEarned + " 點。總點數: " + user.getPoints());
         }
+        // 無論是否有新獲得點數，都必須執行 save，以確保前面的「點數扣除」被永久儲存
+        userRepository.save(user);
+        session.setAttribute("user", user);
+        System.out.println("用戶 " + user.getUsername() + " 點數更新完成。目前總點數: " + user.getPoints());
+    }
+
+    // 寶くじ功能：花費 10 點抽獎
+    @PostMapping("/play-lottery")
+    public String playLottery(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) return "redirect:/login";
+
+        User dbUser = userRepository.findById(user.getId()).orElse(user);
+        int cost = 10;
+
+        if (dbUser.getPoints() < cost) {
+            session.setAttribute("lotteryMessage", "エラー: ポイントが足りません（10pt必要です）。");
+            return "redirect:/profile";
+        }
+
+        // 扣除成本
+        dbUser.setPoints(dbUser.getPoints() - cost);
+
+        // 隨機抽獎邏輯
+        int rand = (int) (Math.random() * 100); // 0-99
+        int winAmount = 0;
+        String message;
+
+        if (rand < 5) { // 5% 機率
+            winAmount = 100;
+            message = "🎉 おめでとうございます！1等 100pt 獲得しました！";
+        } else if (rand < 15) {
+            winAmount = 50;
+            message = "✨ 当たり！2等 50pt 獲得しました！";
+        } else if (rand < 30) { 
+            winAmount = 20;
+            message = "👍 小当たり！3等 20pt 獲得しました！";
+        } else {
+            message = "残念！はずれです。また挑戦してください！";
+        }
+
+        dbUser.setPoints(dbUser.getPoints() + winAmount);
+        userRepository.save(dbUser);
+        session.setAttribute("user", dbUser);
+        session.setAttribute("lotteryMessage", message);
+
+        return "redirect:/profile";
     }
 
     // 顯示點數歷史與目前的點數
@@ -455,38 +511,46 @@ public class UserController {
                 .limit(3)
                 .toList();
 
-        // 3. 計算會員等級與升級進度
-        int points = latestUser.getPoints();
-        String tier = "一般会員"; // 青銅
-        double progress = (points / 100.0) * 100;
-        int pointsToNext = 100 - points;
-        if (points >= 1000) {
-            tier = "ダイヤ会員"; // ダイヤ
-            progress = 100.0;
-            pointsToNext = 0;
-        } else if (points >= 500) {
-            tier = "ゴールド会員"; // 黃金
-            progress = 100.0;
-            pointsToNext = 0;
-        } else if (points >= 100) {
-            tier = "シルバー会員"; // 白銀
-            progress = ((points - 100) / 400.0) * 100;
-            pointsToNext = 500 - points;
-        } else if (points >= 50) {
-            tier = "ブロンズ会員"; // 青銅
-            progress = ((points - 50) / 50.0) * 100;
-            pointsToNext = 100 - points;
-        } else {
-            tier = "一般会員"; // 一般
-            progress = (points / 50.0) * 100;
-            pointsToNext = 50 - points;
-        }
-
         // 4. 計算累積消費總額 (僅計算已支付訂單)
         int totalSpent = allOrders.stream()
                 .filter(o -> "true".equals(o.getPaymentStatus()))
                 .mapToInt(Order::getTotal)
                 .sum();
+
+        // 3. 修正：基於「累積消費金額」計算會員等級，避免因使用點數而降級
+        // 假設：1 點 = 100 元消費，則 50點=5000元, 100點=10000元, 500點=50000元, 1000點=100000元
+        String tier = "一般会員";
+        double progress = 0;
+        int pointsToNext = 0;
+
+        if (totalSpent >= 100000) {
+            tier = "ダイヤ会員";
+            progress = 100.0;
+            pointsToNext = 0;
+        } else if (totalSpent >= 50000) {
+            tier = "ゴールド会員";
+            progress = ((totalSpent - 50000) / 50000.0) * 100;
+            pointsToNext = (100000 - totalSpent) / 100;
+        } else if (totalSpent >= 10000) {
+            tier = "シルバー会員";
+            progress = ((totalSpent - 10000) / 40000.0) * 100;
+            pointsToNext = (50000 - totalSpent) / 100;
+        } else if (totalSpent >= 5000) {
+            tier = "ブロンズ会員";
+            progress = ((totalSpent - 5000) / 5000.0) * 100;
+            pointsToNext = (10000 - totalSpent) / 100;
+        } else {
+            tier = "一般会員";
+            progress = (totalSpent / 5000.0) * 100;
+            pointsToNext = (5000 - totalSpent) / 100;
+        }
+
+        // 獲取抽獎結果訊息並從 Session 移除（確保只顯示一次）
+        String lotteryMessage = (String) session.getAttribute("lotteryMessage");
+        if (lotteryMessage != null) {
+            model.addAttribute("lotteryResult", lotteryMessage);
+            session.removeAttribute("lotteryMessage");
+        }
 
         model.addAttribute("currentUser", latestUser);
         model.addAttribute("recentOrders", recentOrders);
