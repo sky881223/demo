@@ -427,7 +427,7 @@ public class UserController {
         // 獲取最新點數
         User latestUser = userRepository.findById(user.getId()).orElse(user);
         List<Order> orders = orderRepository.findByUser(latestUser);
-        
+
         model.addAttribute("orders", orders);
         model.addAttribute("currentUser", latestUser);
         return "points_history";
