@@ -59,6 +59,10 @@
     <div class="container mb-5">
         <h2 class="text-center mt-5 mb-4 fw-bold" style="color: #9E76B4;">私の注文履歴</h2>
 
+        <div th:if="${error}" class="alert alert-danger text-center shadow-sm">
+            <span th:text="${error}"></span>
+        </div>
+
         <div th:if="${#lists.isEmpty(orders)}" class="alert alert-warning text-center shadow-sm">
             <h4>注文履歴がありません。</h4>
             <p>まだ注文をしていないようです。メニューから注文を始めましょう！</p>
@@ -109,17 +113,16 @@
                             <td class="small text-muted" th:text="${order.note ?: '-'}">-</td>
 
                             <td>
-                                <form th:action="@{/cancel-order}" method="post" style="display:inline;">
+                                <form th:if="${order.paymentStatus == 'false'}" th:action="@{/cancel-order}" method="post" style="display:inline;">
                                     <input type="hidden" name="orderId" th:value="${order.id}" />
                                     <button type="submit" class="btn btn-danger btn-sm"
                                         onclick="return confirm('本当にキャンセルしますか？');">キャンセル</button>
                                 </form>
                             </td>
                             <td>
-                                <form th:action="@{/pay}" method="post" style="display:inline;">
+                                <form th:if="${order.paymentStatus == 'false'}" th:action="@{/pay}" method="post" style="display:inline;">
                                     <input type="hidden" name="id" th:value="${order.id}" />
-                                    <button type="submit" class="btn btn-primary btn-sm"
-                                        th:disabled="${order.paymentStatus == 'true'}">支払い</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">支払い</button>
                                 </form>
                             </td>
                         </tr>

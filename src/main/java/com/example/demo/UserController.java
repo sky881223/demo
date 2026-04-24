@@ -481,8 +481,11 @@ public class UserController {
             return "redirect:/login";
         }
         Order order = orderRepository.findById(orderId).orElse(null);
-        if (order != null && order.getUser().getId().equals(user.getId())) {
+        // 付款狀態為 "false" (未付款) 且屬於該使用者時才允許刪除
+        if (order != null && order.getUser().getId().equals(user.getId()) && "false".equals(order.getPaymentStatus())) {
             orderRepository.delete(order);
+        } else if (order != null && "true".equals(order.getPaymentStatus())) {
+            model.addAttribute("error", "支払い済みの注文はキャンセルできません。");
         }
         return history(session, model);
     }
