@@ -86,6 +86,7 @@
         // 3. 畫出日曆
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth', // 預設顯示「月」視圖
+            dayMaxEvents: 3,             // 超過3個事件時隱藏並顯示更多連結
             locale: 'ja',                // 設定為日文 (顯示 月、火、水...)
             headerToolbar: {
                 left: 'prev,next today',

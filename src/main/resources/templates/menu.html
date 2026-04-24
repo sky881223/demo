@@ -54,9 +54,10 @@
 
 <div class="container mb-5 pb-5">
     <!-- 1. 排行榜區塊 -->
-    <div class="row g-4 mb-5">
+    <div th:if="${not #lists.isEmpty(topMenus)}" class="mb-5">
+        <h5 class="mb-3 fw-bold text-secondary"><i class="fas fa-crown text-warning me-2"></i>本日の人気ランキング</h5>
+        <div class="row g-4">
         <div th:each="menu, iterStat : ${topMenus}" class="col-md-4">
-            <h5 th:if="${iterStat.first}" class="mb-3 fw-bold text-secondary"><i class="fas fa-crown text-warning me-2"></i>本日の人気ランキング</h5>
             <div class="ranking-card position-relative h-100">
                 <div th:class="'rank-badge rank-' + ${iterStat.count}">
                     <i th:if="${iterStat.count == 1}" class="fas fa-crown"></i>
@@ -72,6 +73,7 @@
                     <p class="small text-muted mb-0 text-truncate-2" th:text="${menu.description}">商品の詳細説明が入ります。</p>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 
@@ -103,7 +105,7 @@
                         <span class="category-pill d-inline-block mb-1" style="font-size: 0.65rem; padding: 2px 8px;" th:text="${menu.category}">カテゴリー</span>
                         <h6 class="fw-bold mb-2 text-truncate" th:text="${menu.name}">メニュー名</h6>
                         <p class="small text-muted mb-2 text-truncate-2" th:text="${menu.description}">商品の詳細説明が入ります。</p>
-                        
+
                         <!-- 重新設計的數量控制器 -->
                         <div class="quantity-control mt-2">
                             <!-- 初始狀態：顯示「追加」按鈕 -->

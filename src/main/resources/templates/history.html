@@ -160,6 +160,7 @@
             // 建立並渲染日曆
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
+                dayMaxEvents: 3, // 1日あたり3件までに制限し、超過分は「+他X件」或いは「...」表示
                 locale: 'ja',
                 headerToolbar: {
                     left: 'prev,next today',
