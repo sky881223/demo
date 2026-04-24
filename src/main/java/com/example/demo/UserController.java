@@ -1,6 +1,9 @@
 package com.example.demo;
 
 import java.time.LocalTime;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.time.ZoneId;
 import java.util.List;
 import java.time.LocalDateTime;
@@ -21,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpSession;
@@ -33,6 +37,8 @@ public class UserController {
     private OrderRepository orderRepository;
     @Autowired
     private MenuRepository menuRepository;
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
 
     // 統一密碼強度驗證：至少8位，含大小寫字母與數字
     private boolean isValidPassword(String password) {
@@ -426,7 +432,10 @@ public class UserController {
         }
         // 獲取最新點數
         User latestUser = userRepository.findById(user.getId()).orElse(user);
-        List<Order> orders = orderRepository.findByUser(latestUser);
+        // 將訂單按 ID 倒序排列（從新到舊）
+        List<Order> orders = orderRepository.findByUser(latestUser).stream()
+                .sorted((o1, o2) -> o2.getId().compareTo(o1.getId()))
+                .collect(Collectors.toList());
 
         model.addAttribute("orders", orders);
         model.addAttribute("currentUser", latestUser);
@@ -440,7 +449,10 @@ public class UserController {
         if (user == null) {
             return "redirect:/login";
         } else {
-            List<Order> orders = orderRepository.findByUser(user);
+            // 將訂單按 ID 倒序排列（從新到舊）
+            List<Order> orders = orderRepository.findByUser(user).stream()
+                    .sorted((o1, o2) -> o2.getId().compareTo(o1.getId()))
+                    .collect(Collectors.toList());
             System.out.print("歷史訂單有多少筆:" + orders.size() + "\n");
             if (orders.size() <= 0) {
                 System.out.print("歷史訂單沒有資料" + "\n");
@@ -623,14 +635,50 @@ public class UserController {
     }
 
     @GetMapping("/menu")
-    public String menuPage(Model model) {
+    public String menuPage(HttpSession session, Model model) {
+        User user = (User) session.getAttribute("user");
+        if (user != null) {
+            User latestUser = userRepository.findById(user.getId()).orElse(user);
+            model.addAttribute("currentUser", latestUser);
+        }
         List<Menu> menus = menuRepository.findAll();
+        // 獲取熱門排行榜數據 (銷量前三名)
+        List<MenuSales> salesData = orderDetailRepository.findAllMenuSales();
+        List<Menu> topMenus = salesData.stream()
+                .sorted((a, b) -> b.getTotalQuantity().compareTo(a.getTotalQuantity())) // 依銷量降序排列
+                .limit(3) // 只取前三名
+                .map(sales -> menuRepository.findById(sales.getMenuId()).orElse(null))
+                .filter(menu -> menu != null)
+                .toList();
+        // 定義優先的分類順序
+        List<String> preferredCategoryOrder = List.of("主食", "飲み物", "デザート");
+
+        // 獲取所有不重複的分類 並保持原始順序
+        Set<String> allCategories = menus.stream()
+                                        .map(Menu::getCategory)
+                                        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        // 根據優先順序排序分類，未定義的分類排在後面
+        List<String> orderedCategories = allCategories.stream()
+            .sorted(Comparator.comparingInt(cat -> {
+                int index = preferredCategoryOrder.indexOf(cat);
+                return index == -1 ? Integer.MAX_VALUE : index; // 將不在預設列表中的分類排到最後
+            }))
+            .collect(Collectors.toList());
+
+        model.addAttribute("orderedCategories", orderedCategories); // 將排序後的分類傳給前端
         model.addAttribute("menus", menus);
+        model.addAttribute("topMenus", topMenus); // 將排行榜傳給前端
+
         boolean isOpen = true;
         model.addAttribute("isOpen", isOpen);
         return "menu";
     }
-
+    // 檢查營業時間 (06:00 - 23:45)
+    LocalTime now = LocalTime.now(ZoneId.of("Asia/Tokyo"));
+    LocalTime openTime = LocalTime.of(6, 0);
+    LocalTime closeTime = LocalTime.of(23, 45);
+    boolean isOpen = !(now.isBefore(openTime) || now.isAfter(closeTime));
     @GetMapping("/paymentStatus")
     public String paymentStatusPage(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
@@ -644,7 +692,10 @@ public class UserController {
         if (user == null) {
             return "redirect:/login";
         }
-        List<Order> orders = orderRepository.findByUser(user);
+        // 將訂單按 ID 倒序排列（從新到舊）
+        List<Order> orders = orderRepository.findByUser(user).stream()
+                .sorted((o1, o2) -> o2.getId().compareTo(o1.getId()))
+                .collect(Collectors.toList());
         model.addAttribute("orders", orders);
         model.addAttribute("currentUser", user);
         return "history";

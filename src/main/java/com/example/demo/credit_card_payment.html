@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>信用卡安全支付</title>
+    <title>クレジットカード安全支付</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .payment-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; }
@@ -23,36 +23,35 @@
 </head>
 <body>
     <div class="payment-container">
-        <h2>信用卡支付</h2>
+        <h2>クレジットカード安全支付</h2>
         
         <div class="order-summary">
-            <p>訂單編號：<span th:text="${order.id}">001</span></p>
-            <p class="total">應付金額：NT$ <span th:text="${order.total}">0</span></p>
+            <p>注文番号：<span th:text="${order.id}">001</span></p>
+            <p class="total">支払金額：NT$ <span th:text="${order.total}">0</span></p>
         </div>
 
         <form th:action="@{/process-credit-card}" method="post">
             <div class="form-group">
-                <label>持卡人姓名</label>
+                <label>カード所有者名</label>
                 <input type="text" placeholder="例如：WANG XIAO MING" required>
             </div>
             <div class="form-group">
-                <label>卡號</label>
+                <label>カード番号</label>
                 <input type="text" name="cardNumber" placeholder="xxxx xxxx xxxx xxxx" maxlength="16" required pattern="\d{16}">
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>到期日 (MM/YY)</label>
+                    <label>有効期限</label>
                     <input type="text" name="expiry" placeholder="MM/YY" maxlength="5" required>
                 </div>
                 <div class="form-group">
-                    <label>安全碼 (CVV)</label>
+                    <label>CVV</label>
                     <input type="password" name="cvv" placeholder="123" maxlength="3" required pattern="\d{3}">
                 </div>
             </div>
-            <button type="submit" class="btn-submit">確認支付</button>
+            <button type="submit" class="btn-submit">支払う</button>
         </form>
-        <div class="footer-note">
-            🔒 此頁面符合 PCI 數據安全標準，您的資料已加密處理。
+        <div class="footer-note">安全な支払いのために、カード情報は暗号化されて送信されます。</div>
         </div>
     </div>
 </body>

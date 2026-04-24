@@ -323,6 +323,15 @@
                     }
                 });
             }
+
+            // 訂單列表與表格倒序處理 (最新順)
+            const listContainers = document.querySelectorAll('tbody, .list-group');
+            listContainers.forEach(function(container) {
+                const children = Array.from(container.children);
+                if (children.length > 1) {
+                    children.reverse().forEach(function(child) { container.appendChild(child); });
+                }
+            });
         });
     </script>
 
