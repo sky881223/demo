@@ -122,10 +122,15 @@
             </div>
         </div>
 
+        <!-- 打烊提醒 -->
+        <div th:if="${!isOpen and order.paymentStatus == 'false'}" class="alert alert-warning small mb-3">
+            現在、営業時間外のためお支払いができません。
+        </div>
+
         <!-- 只有在未支付的情況下才顯示支付按鈕 -->
         <form th:if="${order.paymentStatus == 'false'}" action="/paymentstatus_2" method="post" class="d-grid mt-2">
             <input type="hidden" name="orderId" th:value="${order.id}" />
-            <button type="submit" class="btn btn-custom">
+            <button type="submit" class="btn btn-custom" th:disabled="${!isOpen}">
                 <i class="bi bi-wallet2 me-2"></i>今すぐ支払う
             </button>
         </form>

@@ -48,6 +48,14 @@ public class UserController {
                 && password.matches(".*[0-9].*");
     }
 
+    // 統一檢查營業時間 (06:00 - 23:45 Asia/Tokyo)
+    private boolean isStoreOpen() {
+        LocalTime now = LocalTime.now(ZoneId.of("Asia/Tokyo"));
+        LocalTime openTime = LocalTime.of(6, 0);
+        LocalTime closeTime = LocalTime.of(9, 45);
+        return !(now.isBefore(openTime) || now.isAfter(closeTime));
+    }
+
     // 註冊表單提交：驗證密碼強度並發送電子郵件驗證碼
     @PostMapping("/saveUser")
     public String handleForm(@RequestParam("email") String email, @RequestParam("name") String name,
@@ -240,15 +248,9 @@ public class UserController {
         if (user == null) {
             return "redirect:/login";
         } else {
-            // 檢查營業時間 (06:00 - 23:45)
-            LocalTime now = LocalTime.now(ZoneId.of("Asia/Tokyo"));
-            LocalTime openTime = LocalTime.of(6, 0);
-            LocalTime closeTime = LocalTime.of(23, 45);
-            boolean isOpen = true;
-            if (now.isBefore(openTime) || now.isAfter(closeTime)) {
-                isOpen = false;
-                model.addAttribute("isOpen", isOpen);
-                return "menu";
+            // 加入購物車前檢查營業時間
+            if (!isStoreOpen()) {
+                return "redirect:/menu?error=closed";
             }
             if (menuIds == null || menuIds.isEmpty()) {
                 return "redirect:/menu?error=none_selected";
@@ -293,6 +295,7 @@ public class UserController {
 
             orderRepository.save(order);
             model.addAttribute("order", order);
+            model.addAttribute("isOpen", isStoreOpen()); // 確保支付頁面知道營業狀態
             // 將 orderId 存入 session 或 model 以便付款確認時使用，避免誤扣
             session.setAttribute("pendingOrderId", order.getId());
 
@@ -338,6 +341,11 @@ public class UserController {
         if (user == null) {
             return "redirect:/login";
         } else {
+            // 確認支付前再次檢查營業時間
+            if (!isStoreOpen()) {
+                return "redirect:/menu?error=closed";
+            }
+
             // 優先使用傳入的 ID，若無則從 session 拿，最後才抓最新的（增加安全性）
             Long idToPay = (orderId != null) ? orderId : (Long) session.getAttribute("pendingOrderId");
             Order order = (idToPay != null) ? orderRepository.findById(idToPay).orElse(null)
@@ -361,6 +369,7 @@ public class UserController {
                 session.removeAttribute("pendingOrderId"); // 清除待處理訂單ID
             }
             model.addAttribute("order", order); // 確保 order 物件傳回前端
+            model.addAttribute("isOpen", isStoreOpen());
             model.addAttribute("message", "決済が正常に完了しました！");
             return "paymentStatus"; // 改為返回頁面而非重定向，這樣才看得到「支払済」
         }
@@ -497,6 +506,10 @@ public class UserController {
         if (user == null) {
             return "redirect:/login";
         } else {
+            // 從歷史紀錄點擊支付時也應檢查營業時間
+            if (!isStoreOpen()) {
+                return "redirect:/menu?error=closed";
+            }
             // 呼叫統一的支付處理邏輯，確保點數也會被扣除
             return paymentStatus(id, session, model);
         }
@@ -673,19 +686,16 @@ public class UserController {
         model.addAttribute("menus", menus);
         model.addAttribute("topMenus", topMenus); // 將排行榜傳給前端
 
-        boolean isOpen = true;
-        model.addAttribute("isOpen", isOpen);
+        // 傳遞營業狀態給前端頁面
+        model.addAttribute("isOpen", isStoreOpen());
         return "menu";
     }
-    // 檢查營業時間 (06:00 - 23:45)
-    LocalTime now = LocalTime.now(ZoneId.of("Asia/Tokyo"));
-    LocalTime openTime = LocalTime.of(6, 0);
-    LocalTime closeTime = LocalTime.of(9, 45);
-    boolean isOpen = !(now.isBefore(openTime) || now.isAfter(closeTime));
+
     @GetMapping("/paymentStatus")
     public String paymentStatusPage(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         model.addAttribute("currentUser", user);
+        model.addAttribute("isOpen", isStoreOpen());
         return "paymentStatus";
     }
 
