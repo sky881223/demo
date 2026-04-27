@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>全體ポイント履歷</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        .container { margin-top: 50px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .table th { background-color: #f8f9fa; color: #2c3e50; }
+        .earned { color: #28a745; font-weight: bold; }
+        .used { color: #dc3545; font-weight: bold; }
+        .btn-back { background-color: #6c757d; color: white; border-radius: 8px; transition: 0.3s; }
+        .btn-back:hover { background-color: #5a6268; color: white; }
+    </style>
+</head>
+<body>
+<div class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold" style="color: #2c3e50;"><i class="bi bi-coin me-2"></i>全體ポイント履歷</h2>
+        <a href="/admin/adminprofile" class="btn btn-back"><i class="bi bi-arrow-left me-1"></i>戻る</a>
+    </div>
+
+    <div class="card p-4">
+        <!-- 搜尋功能 -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" id="historySearch" class="form-control border-start-0" placeholder="ユーザー名で検索...">
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>日付</th>
+                        <th>ユーザー</th>
+                        <th>項目</th>
+                        <th>ポイント變動</th>
+                        <th>金額</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTable">
+                    <tr th:each="order : ${orders}">
+                        <td class="small" th:text="${order.orderTime}">2023-10-27</td>
+                        <td class="fw-bold" th:text="${order.user != null ? order.user.username : '不明'}">User</td>
+                        <td>
+                            <span class="badge bg-light text-dark" th:if="${order.usedPoints > 0}">ポイント使用</span>
+                            <span class="badge bg-light text-dark" th:if="${order.earnedPoints > 0}">ポイント獲得</span>
+                        </td>
+                        <td>
+                            <div th:if="${order.usedPoints > 0}" class="used">- <span th:text="${order.usedPoints}"></span> pt</div>
+                            <div th:if="${order.earnedPoints > 0}" class="earned">+ <span th:text="${order.earnedPoints}"></span> pt</div>
+                        </td>
+                        <td th:text="${order.total + '円'}">0円</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(orders)}">
+                        <td colspan="5" class="text-center text-muted py-4">ただ今の履歴はありません。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('historySearch').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#historyTable tr');
+        rows.forEach(row => {
+            const username = row.cells[1]?.textContent.toLowerCase() || "";
+            row.style.display = username.includes(filter) ? '' : 'none';
+        });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

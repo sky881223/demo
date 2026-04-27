@@ -680,7 +680,7 @@ public class UserController {
     // 檢查營業時間 (06:00 - 23:45)
     LocalTime now = LocalTime.now(ZoneId.of("Asia/Tokyo"));
     LocalTime openTime = LocalTime.of(6, 0);
-    LocalTime closeTime = LocalTime.of(23, 45);
+    LocalTime closeTime = LocalTime.of(9, 45);
     boolean isOpen = !(now.isBefore(openTime) || now.isAfter(closeTime));
     @GetMapping("/paymentStatus")
     public String paymentStatusPage(HttpSession session, Model model) {

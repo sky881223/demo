@@ -81,6 +81,7 @@
                             <th>値段</th>
                             <th>量</th>
                             <th>合計金額</th>
+                            <th>ポイント利用</th>
                             <th>支払い状況</th>
                             <th>注文日時</th>
                             <th>備考</th>
@@ -101,6 +102,10 @@
                             </td>
                             <td class="price-text">
                                 <span th:text="${#numbers.formatDecimal(order.total, 1, 'COMMA', 0, 'POINT')}">0</span>円
+                            </td>
+                            <td>
+                                <span th:if="${order.usedPoints > 0}" class="text-danger fw-bold" th:text="'-' + ${order.usedPoints} + ' pt'"></span>
+                                <span th:if="${order.usedPoints == null or order.usedPoints == 0}" class="text-muted">-</span>
                             </td>
                             <td>
                                 <span

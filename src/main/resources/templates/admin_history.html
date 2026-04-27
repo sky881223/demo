@@ -162,6 +162,16 @@
 
             <div id='calendar'></div>
 
+            <!-- ユーザー検索バー -->
+            <div class="row mb-3">
+                <div class="col-md-4 ms-auto">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" id="userSearch" class="form-control border-start-0" placeholder="ユーザー名やIDで検索...">
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover table-bordered shadow-sm bg-white">
                     <thead class="table-dark">
@@ -171,6 +181,7 @@
                             <th>値段</th>
                             <th>量</th>
                             <th>合計金額</th>
+                            <th>ポイント利用</th>
                             <th>支払い状況</th>
                             <th>注文日時</th>
                             <th>備考</th>
@@ -194,6 +205,11 @@
 
                             <td class="price-text">
                                 <span th:text="${#numbers.formatDecimal(order.total, 1, 'COMMA', 0, 'POINT')}">0</span>円
+                            </td>
+
+                            <td>
+                                <span th:if="${order.usedPoints > 0}" class="text-danger fw-bold" th:text="'-' + ${order.usedPoints} + ' pt'"></span>
+                                <span th:if="${order.usedPoints == null or order.usedPoints == 0}" class="text-muted">-</span>
                             </td>
 
                             <td>
@@ -333,6 +349,31 @@
                     children.reverse().forEach(function(child) { container.appendChild(child); });
                 }
             });
+
+            // ユーザー検索フィルター機能
+            var searchInput = document.getElementById('userSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    var filter = this.value.toLowerCase();
+                    
+                    // テーブルの行をフィルタリング (1列目のユーザー情報を対象)
+                    var rows = document.querySelectorAll('tbody tr');
+                    rows.forEach(function (row) {
+                        var userText = row.cells[0].textContent.toLowerCase();
+                        row.style.display = userText.includes(filter) ? '' : 'none';
+                    });
+
+                    // 概要リスト(未払い・支払済)のアイテムも連動してフィルタリング
+                    var listItems = document.querySelectorAll('.list-group-item');
+                    listItems.forEach(function (item) {
+                        var nameElement = item.querySelector('.fw-bold');
+                        if (nameElement) {
+                            var userText = nameElement.textContent.toLowerCase();
+                            item.style.display = userText.includes(filter) ? '' : 'none';
+                        }
+                    });
+                });
+            }
         });
     </script>
 

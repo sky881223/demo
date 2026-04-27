@@ -6,6 +6,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -33,6 +36,8 @@ public class AdminController {
     private AdminRepository adminRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private JavaMailSender mailSender;
 
     // 獲取菜單管理頁面
     @GetMapping("/menu")
@@ -224,11 +229,56 @@ public class AdminController {
         }
         User user = userRepository.findById(userId).orElse(null);
         if (user != null) {
+            // 1. 在刪除前發送郵件通知
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setTo(user.getEmail());
+                message.setSubject("【重要アカウント削除のお知らせ】");
+                message.setText("いつもお世話になっております。\n\n" + user.getUsername() + "さん\n\n" +
+                        "管理者により、お客様のアカウントは削除されました。本通知をもちまして、お客様の個人情報およびご注文履歴はすべて、弊社のシステムより完全に削除させていただきます。\n\n" +
+                        "--------------------------------------------------\n" +
+                        "ご利用ありがとうございました。\n");
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.err.println("郵件發送失敗: " + e.getMessage());
+            }
+
             // 整合性を保つため、ユーザーに関連する注文を先に削除
             List<Order> userOrders = orderRepository.findByUser(user);
             orderRepository.deleteAll(userOrders);
             userRepository.delete(user);
         }
         return "redirect:/admin/users";
+    }
+
+    // 點數更新處理 (單獨出的處理邏輯)
+    @PostMapping("/users/updatePoints")
+    @Transactional
+    public String updatePoints(@RequestParam("userId") Long userId, @RequestParam("newPoints") int newPoints, HttpSession session) {
+        Admin admin = (Admin) session.getAttribute("adminUser");
+        if (admin == null) {
+            return "redirect:/admin/adminlogin";
+        }
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setPoints(newPoints);
+            userRepository.save(user);
+        });
+        return "redirect:/admin/users";
+    }
+
+    // 全員點數履歷
+    @GetMapping("/points-history")
+    public String allPointsHistory(HttpSession session, Model model) {
+        Admin admin = (Admin) session.getAttribute("adminUser");
+        if (admin == null) {
+            return "redirect:/admin/adminlogin";
+        }
+        // 獲取所有點數有變動（獲得或使用）的訂單，並按時間倒序排列
+        List<Order> pointOrders = orderRepository.findAll().stream()
+                .filter(o -> o.getEarnedPoints() > 0 || o.getUsedPoints() > 0)
+                .sorted((o1, o2) -> o2.getId().compareTo(o1.getId()))
+                .collect(Collectors.toList());
+        model.addAttribute("orders", pointOrders);
+        return "admin_points_history";
     }
 }

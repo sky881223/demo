@@ -29,7 +29,7 @@
         </div>
         <h2 class="fw-bold" th:text="${adminUser.username + ' 管理員'}">Admin Name</h2>
         <p class="opacity-75" th:text="${adminUser.email}">admin@example.com</p>
-        <span class="badge bg-light text-dark px-3 py-2 rounded-pill">系統最高權限</span>
+        <span class="badge bg-light text-dark px-3 py-2 rounded-pill">システム最高権限</span>
     </div>
 </div>
 
@@ -94,7 +94,18 @@
                                 <div class="fs-3 me-3 text-info"><i class="bi bi-people"></i></div>
                                 <div>
                                     <div class="fw-bold text-dark">ユーザー管理</div>
-                                    <small class="text-muted">登録ユーザーの確認・削除を行います</small>
+                                    <small class="text-muted">登録ユーザーの確認・削除・ポイント管理を行います</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="/admin/points-history" class="text-decoration-none">
+                            <div class="action-btn d-flex align-items-center">
+                                <div class="fs-3 me-3 text-warning"><i class="bi bi-coin"></i></div>
+                                <div>
+                                    <div class="fw-bold text-dark">ポイント履歴</div>
+                                    <small class="text-muted">全體ユーザーのポイント変動履歴を確認します</small>
                                 </div>
                             </div>
                         </a>
